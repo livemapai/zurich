@@ -27,6 +27,10 @@ export const CONFIG = {
     collisionRadius: 0.3,
     /** Maximum step-up height in meters */
     stepHeight: 0.3,
+    /** Minimum altitude for fly mode (just above Zurich ground level ~408m) */
+    minAltitude: 410,
+    /** Maximum altitude for fly mode */
+    maxAltitude: 1000,
   },
 
   /** Movement speeds in meters per second */

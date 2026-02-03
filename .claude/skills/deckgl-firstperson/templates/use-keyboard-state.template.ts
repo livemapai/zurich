@@ -12,6 +12,8 @@ const INITIAL_STATE: KeyboardState = {
   backward: false,
   left: false,
   right: false,
+  up: false,      // Q key - fly up
+  down: false,    // E key - fly down
   run: false,
   jump: false,
 };
@@ -21,6 +23,8 @@ const KEY_MAP: Record<string, keyof KeyboardState> = {
   KeyS: 'backward',
   KeyA: 'left',
   KeyD: 'right',
+  KeyQ: 'up',       // Fly up
+  KeyE: 'down',     // Fly down
   ShiftLeft: 'run',
   ShiftRight: 'run',
   Space: 'jump',

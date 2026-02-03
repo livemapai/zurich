@@ -53,6 +53,18 @@ npx madge --circular src/
 - [ ] Required props provided
 - [ ] Color values in valid range (0-255)
 
+### Step 6: Constant Consistency
+- [ ] All uses of `ZURICH_BASE_ELEVATION` use the same value (408)
+- [ ] All uses of `METERS_PER_DEGREE` use correct values (lng: 75500, lat: 111320)
+- [ ] No hardcoded elevation or conversion values (should import from types)
+- [ ] Camera initial altitude matches ground + eye height
+
+### Step 7: Coordinate System Check
+- [ ] FirstPersonViewState uses dual-anchor system (longitude/latitude + position)
+- [ ] `position` array contains meters, not degrees
+- [ ] Movement converts velocity (m/s) to degrees before updating longitude/latitude
+- [ ] Altitude in position[2] is absolute (above sea level), not relative
+
 ## Common Verification Commands
 
 ```bash
@@ -70,6 +82,24 @@ node scripts/validate-geojson.js public/data/buildings.geojson
 
 # Check bundle size (dry run)
 pnpm build --dry-run
+```
+
+## Consistency Verification Commands
+
+Use these grep commands to check for constant consistency:
+
+```bash
+# Find hardcoded elevation values (should use ZURICH_BASE_ELEVATION)
+grep -rn "408\|409\|410" src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules"
+
+# Find hardcoded meters-per-degree values (should use METERS_PER_DEGREE)
+grep -rn "75500\|111320\|73000\|111000" src/ --include="*.ts" --include="*.tsx" | grep -v "node_modules"
+
+# Verify all files use imported constants
+grep -rn "ZURICH_BASE_ELEVATION\|METERS_PER_DEGREE" src/ --include="*.ts" --include="*.tsx"
+
+# Check for position array misuse (degrees where meters expected)
+grep -rn "position:\s*\[8\." src/ --include="*.ts" --include="*.tsx"  # Likely degrees, should be meters
 ```
 
 ## Verification Scripts

@@ -187,17 +187,34 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
           newViewState = setPosition(newViewState, newPos[0], newPos[1]);
         }
 
-        // 5. Apply terrain following
-        const groundElev = getElevationOrDefault([
-          newViewState.longitude,
-          newViewState.latitude,
-        ]);
-        newViewState = setAltitude(
-          newViewState,
-          groundElev,
-          CONFIG.player.eyeHeight,
-          0.7 // Smooth factor
-        );
+        // 5. Check if flying (vertical movement)
+        const isFlying = velocity.z !== 0;
+
+        if (isFlying) {
+          // Apply vertical velocity directly (fly mode)
+          const newAltitude = newViewState.position[2] + velocity.z * deltaTime;
+          // Clamp to min/max altitude
+          const clampedAlt = Math.max(
+            CONFIG.player.minAltitude,
+            Math.min(CONFIG.player.maxAltitude, newAltitude)
+          );
+          newViewState = {
+            ...newViewState,
+            position: [0, 0, clampedAlt] as [number, number, number],
+          };
+        } else {
+          // 6. Apply terrain following (only when not flying)
+          const groundElev = getElevationOrDefault([
+            newViewState.longitude,
+            newViewState.latitude,
+          ]);
+          newViewState = setAltitude(
+            newViewState,
+            groundElev,
+            CONFIG.player.eyeHeight,
+            0.7 // Smooth factor
+          );
+        }
       }
 
       // 6. Update view state if changed
@@ -309,6 +326,10 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
             <kbd>A</kbd>
             <kbd>S</kbd>
             <kbd>D</kbd> Move
+          </p>
+          <p>
+            <kbd>Q</kbd>
+            <kbd>E</kbd> Fly up/down
           </p>
           <p>
             <kbd>Shift</kbd> Run

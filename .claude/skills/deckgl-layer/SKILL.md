@@ -52,7 +52,27 @@ Ask the user or determine:
 - [ ] Add export to `src/layers/index.ts`
 - [ ] Add component export to `src/components/layers/index.ts`
 
-### Step 7: Verify
+### Step 7: Elevation Consistency Check
+
+For layers with 3D elevation:
+- [ ] Use `ZURICH_BASE_ELEVATION` from `@/types` (408 meters)
+- [ ] Verify `elevationScale` matches expectations
+- [ ] Check `getElevation` accessor returns absolute altitude (not relative)
+- [ ] Ensure buildings have same elevation baseline as camera
+
+**Elevation Checklist:**
+```typescript
+// CORRECT - using project constant
+import { ZURICH_BASE_ELEVATION } from '@/types';
+
+// For buildings
+getElevation: () => ZURICH_BASE_ELEVATION, // Base at 408m
+
+// For extruded polygons
+getElevation: (d) => d.properties.baseElevation ?? ZURICH_BASE_ELEVATION,
+```
+
+### Step 8: Verify
 - [ ] Run `pnpm type-check`
 - [ ] Confirm no type errors
 - [ ] Check imports resolve correctly
@@ -80,6 +100,10 @@ Use templates from `templates/` directory:
 | Layer not rendering | Data is empty/null | Add null checks, log data in console |
 | WebGL errors | Invalid props | Check prop values (opacity 0-1, colors 0-255) |
 | "accessor" errors in v9 | Wrong type | Ensure accessor returns correct type (e.g., Position[][] not Position[]) |
+| Buildings floating | Wrong base elevation | Use `ZURICH_BASE_ELEVATION` (408) |
+| Buildings underground | Elevation too low | Check altitude includes ground level |
+| Z-fighting/flickering | Overlapping surfaces | Adjust elevation by small offset |
+| MultiPolygon not rendering | Wrong coordinate accessor | Handle both Polygon and MultiPolygon in `getPolygon` |
 
 ## Recovery
 

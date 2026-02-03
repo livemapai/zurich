@@ -31,6 +31,8 @@ const KEY_MAP: Record<string, keyof KeyboardState> = {
   KeyS: 'backward',
   KeyA: 'left',
   KeyD: 'right',
+  KeyQ: 'up',       // Fly up
+  KeyE: 'down',     // Fly down
   ArrowUp: 'forward',
   ArrowDown: 'backward',
   ArrowLeft: 'left',

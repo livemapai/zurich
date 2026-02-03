@@ -11,6 +11,7 @@ Implements complete first-person walkthrough controls for deck.gl applications.
 ## Features
 
 - **WASD Movement:** Keyboard-based walking/running
+- **Q/E Fly Mode:** Vertical movement (up/down) with altitude clamping
 - **Mouse Look:** Pointer lock for camera control
 - **Collision Detection:** RBush spatial indexing for buildings
 - **Terrain Following:** Ground-locked altitude with smooth transitions
@@ -24,28 +25,65 @@ Implements complete first-person walkthrough controls for deck.gl applications.
 
 ## Core Concepts
 
-### FirstPersonView Coordinate System
+### FirstPersonView Coordinate System (Dual-Anchor)
 
-deck.gl's FirstPersonView uses:
+deck.gl's FirstPersonView uses a **dual-anchor system** for high precision:
+
 ```typescript
 interface FirstPersonViewState {
-  position: [lng, lat, altitude]; // WGS84 + meters
-  bearing: number;  // 0=North, 90=East, 180=South, 270=West
-  pitch: number;    // -90=up, 0=level, 90=down
+  longitude: number;  // Geographic anchor (WGS84 degrees)
+  latitude: number;   // Geographic anchor (WGS84 degrees)
+  position: [number, number, number]; // Offset [east, north, up] in METERS
+  bearing: number;    // 0=North, 90=East, 180=South, 270=West (clockwise)
+  pitch: number;      // -90=up, 0=horizon, +90=down
 }
 ```
 
-### Movement Calculation
+**Why dual-anchor?** This prevents floating-point precision issues at high zoom.
 
-Movement is calculated in meters, then converted to degrees:
+- `longitude`/`latitude`: Fixed geographic reference point
+- `position[0]`: East offset in meters (NOT longitude!)
+- `position[1]`: North offset in meters (NOT latitude!)
+- `position[2]`: Altitude in meters above sea level
+
+### Movement Pattern
+
+Our implementation moves via `longitude`/`latitude` directly:
+
 ```typescript
-// Bearing-relative movement
-const dx = Math.sin(bearing * DEG_TO_RAD) * velocity.forward;
-const dy = Math.cos(bearing * DEG_TO_RAD) * velocity.forward;
+// From src/lib/constants.ts - use project constants
+import { METERS_PER_DEGREE } from '@/lib/constants';
 
-// Convert meters to degrees (at Zurich latitude)
-const dLng = dx / 73000;  // meters per degree longitude
-const dLat = dy / 111000; // meters per degree latitude
+// Velocity in m/s → position delta in degrees
+const dLng = (velocity.x * deltaTime) / METERS_PER_DEGREE.lng; // 75500 at 47°N
+const dLat = (velocity.y * deltaTime) / METERS_PER_DEGREE.lat; // 111320
+
+// Update geographic anchor directly
+newViewState = {
+  ...viewState,
+  longitude: viewState.longitude + dLng,
+  latitude: viewState.latitude + dLat,
+};
+
+// position[0] and position[1] stay at 0
+// position[2] is altitude in meters
+```
+
+### Fly Mode (Q/E Keys)
+
+Vertical movement uses `position[2]` for altitude:
+
+```typescript
+// Q = up, E = down (same speed as horizontal movement)
+if (keyboard.up) velocity.z += speed;
+if (keyboard.down) velocity.z -= speed;
+
+// Apply vertical movement directly to position[2]
+const newAltitude = viewState.position[2] + velocity.z * deltaTime;
+newViewState = {
+  ...viewState,
+  position: [0, 0, Math.max(minAltitude, Math.min(maxAltitude, newAltitude))],
+};
 ```
 
 ## Workflow
@@ -69,6 +107,7 @@ See `workflows/` directory:
 - `add-wasd-controls.md` - Just movement, no collision
 - `add-collision.md` - Add collision to existing movement
 - `add-terrain-following.md` - Add terrain to existing system
+- `add-fly-mode.md` - Add Q/E vertical movement
 
 ## Reference Files
 
@@ -97,6 +136,10 @@ All templates are complete implementations ready to copy:
 | Collision not detecting | RBush not populated | Call `load()` before checking |
 | Jittery movement | Float precision | Use doubles, reduce calculation frequency |
 | Falls through terrain | Terrain not loaded | Add loading check before movement |
+| Position shows degrees | Confusing position with lng/lat | `position` is meter offsets, NOT degrees! |
+| Wrong METERS_PER_DEGREE | Wrong constant value | Use 75500 for lng, 111320 for lat at 47°N |
+| Fly mode not working | Missing up/down in KeyboardState | Add `up` and `down` boolean fields |
+| Can't fly below ground | Missing altitude clamping | Use `Math.max(minAltitude, altitude)` |
 
 ## Recovery
 

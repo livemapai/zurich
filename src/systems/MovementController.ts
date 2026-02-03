@@ -58,22 +58,29 @@ export function calculateVelocity(
   const worldX = localX * sin + localY * cos;
   const worldY = -localX * cos + localY * sin;
 
+  // Vertical movement (fly mode) - Q = up, E = down
+  let localZ = 0;
+  if (keyboard.up) localZ += 1;
+  if (keyboard.down) localZ -= 1;
+
   return {
     x: worldX * speed,
     y: worldY * speed,
-    z: 0, // No vertical movement from WASD
+    z: localZ * speed, // Q/E fly mode uses same speed
   };
 }
 
 /**
- * Check if there is any movement input
+ * Check if there is any movement input (including vertical)
  */
 export function hasMovementInput(keyboard: KeyboardState): boolean {
   return (
     keyboard.forward ||
     keyboard.backward ||
     keyboard.left ||
-    keyboard.right
+    keyboard.right ||
+    keyboard.up ||
+    keyboard.down
   );
 }
 
@@ -86,6 +93,8 @@ export function createEmptyKeyboardState(): KeyboardState {
     backward: false,
     left: false,
     right: false,
+    up: false,    // Q key - fly up
+    down: false,  // E key - fly down
     run: false,
     jump: false,
   };

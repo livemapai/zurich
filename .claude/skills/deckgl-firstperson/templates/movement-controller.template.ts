@@ -62,10 +62,15 @@ export class MovementController {
     const worldX = localX * cosB + localY * sinB;
     const worldY = -localX * sinB + localY * cosB;
 
+    // Vertical movement (fly mode) - uses same speed as horizontal
+    let localZ = 0;
+    if (keyboard.up) localZ += 1;
+    if (keyboard.down) localZ -= 1;
+
     return {
       x: worldX * speed,
       y: worldY * speed,
-      z: 0, // Vertical velocity handled separately
+      z: localZ * speed, // Q/E fly mode
     };
   }
 

@@ -104,6 +104,8 @@ export interface KeyboardState {
   backward: boolean;
   left: boolean;
   right: boolean;
+  up: boolean;    // Q key - fly up
+  down: boolean;  // E key - fly down
   run: boolean;
   jump: boolean;
 }
