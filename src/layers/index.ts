@@ -19,6 +19,14 @@ export {
   type GridLayerConfig,
 } from './TerrainLayer';
 
+// Map tile layers
+export {
+  createMapTileLayer,
+  OSM_TILE_URL,
+  STADIA_TILE_URL,
+  type MapTileLayerConfig,
+} from './MapTileLayer';
+
 // Minimap layers
 export {
   createMinimapLayers,

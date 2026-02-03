@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { FirstPersonView, LightingEffect, AmbientLight, DirectionalLight } from '@deck.gl/core';
 import type { FirstPersonViewState, BuildingCollection, LngLat } from '@/types';
-import { ZURICH_CENTER } from '@/types';
+import { ZURICH_CENTER, ZURICH_BASE_ELEVATION } from '@/types';
 import { CONFIG } from '@/lib/config';
 import {
   useKeyboardState,
@@ -19,7 +19,7 @@ import {
   setAltitude,
   setPosition,
 } from '@/systems';
-import { createBuildingsLayer, createTerrainLayer } from '@/layers';
+import { createBuildingsLayer, createMapTileLayer } from '@/layers';
 import { Minimap } from '@/components/Minimap';
 
 interface ZurichViewerProps {
@@ -32,11 +32,12 @@ interface ZurichViewerProps {
  *
  * longitude/latitude: Geographic anchor in WGS84 degrees
  * position: Meter offset from anchor [east, north, up]
+ * Altitude = ground elevation (408m) + eye height (1.7m) = 409.7m
  */
 const INITIAL_VIEW_STATE: FirstPersonViewState = {
   longitude: ZURICH_CENTER[0], // 8.5437
   latitude: ZURICH_CENTER[1], // 47.3739
-  position: [0, 0, 1.7], // 0m east, 0m north, 1.7m up (eye height)
+  position: [0, 0, ZURICH_BASE_ELEVATION + CONFIG.player.eyeHeight], // 408 + 1.7 = 409.7m
   bearing: 0, // Facing North
   pitch: 0, // Looking at horizon
   fov: CONFIG.render.fov,
@@ -79,8 +80,8 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
   // Minimap state
   const [showMinimap, setShowMinimap] = useState(true);
 
-  // Input hooks
-  const { keyboard } = useKeyboardState({
+  // Input hooks - use getKeyboard() getter for stable reference in game loop
+  const { getKeyboard } = useKeyboardState({
     enabled: isReady,
   });
 
@@ -165,10 +166,13 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
         }
       }
 
-      // 2. Calculate velocity from keyboard input
+      // 2. Get current keyboard state (always fresh via getter)
+      const keyboard = getKeyboard();
+
+      // 3. Calculate velocity from keyboard input
       const velocity = calculateVelocity(keyboard, newViewState.bearing);
 
-      // 3. Apply movement with collision detection
+      // 4. Apply movement with collision detection
       if (hasMovementInput(keyboard)) {
         const currentPos: LngLat = [
           newViewState.longitude,
@@ -183,7 +187,7 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
           newViewState = setPosition(newViewState, newPos[0], newPos[1]);
         }
 
-        // 4. Apply terrain following
+        // 5. Apply terrain following
         const groundElev = getElevationOrDefault([
           newViewState.longitude,
           newViewState.latitude,
@@ -196,12 +200,12 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
         );
       }
 
-      // 5. Update view state if changed
+      // 6. Update view state if changed
       if (newViewState !== viewStateRef.current) {
         setViewState(newViewState);
       }
     },
-    [isLocked, consumeDelta, keyboard, moveWithCollision, getElevationOrDefault]
+    [isLocked, consumeDelta, getKeyboard, moveWithCollision, getElevationOrDefault]
   );
 
   // Start game loop
@@ -244,8 +248,8 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
   const layers = useMemo(() => {
     const result = [];
 
-    // Ground plane
-    result.push(createTerrainLayer());
+    // Map tiles as ground plane
+    result.push(createMapTileLayer());
 
     // Buildings (if loaded)
     if (buildings?.features?.length) {

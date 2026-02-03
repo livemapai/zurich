@@ -15,8 +15,10 @@ interface UseKeyboardStateOptions {
 }
 
 interface UseKeyboardStateResult {
-  /** Current keyboard state */
+  /** Current keyboard state (for React components) */
   keyboard: KeyboardState;
+  /** Get current keyboard state (stable function for game loop) */
+  getKeyboard: () => KeyboardState;
   /** Reset all keys to unpressed state */
   reset: () => void;
 }
@@ -70,6 +72,9 @@ export function useKeyboardState(
     keyboardRef.current = empty;
     setKeyboard(empty);
   }, []);
+
+  // Stable getter function for game loop (avoids stale closures)
+  const getKeyboard = useCallback(() => keyboardRef.current, []);
 
   useEffect(() => {
     if (!enabled) {
@@ -140,5 +145,5 @@ export function useKeyboardState(
     };
   }, [enabled, reset]);
 
-  return { keyboard, reset };
+  return { keyboard, getKeyboard, reset };
 }

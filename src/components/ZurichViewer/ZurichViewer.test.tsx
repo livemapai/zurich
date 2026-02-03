@@ -28,7 +28,7 @@ vi.mock('@deck.gl/core', () => ({
 // Mock layers module
 vi.mock('@/layers', () => ({
   createBuildingsLayer: vi.fn().mockReturnValue({}),
-  createTerrainLayer: vi.fn().mockReturnValue({}),
+  createMapTileLayer: vi.fn().mockReturnValue({}),
   createMinimapLayers: vi.fn().mockReturnValue([]),
 }));
 
