@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { FirstPersonView } from '@deck.gl/core';
 import type { FirstPersonViewState, BuildingCollection, TreeCollection, LightCollection, TramTrackCollection, OverheadPoleCollection, LngLat } from '@/types';
-import type { FountainCollection, BenchCollection } from '@/layers';
+import type { FountainCollection, BenchCollection, ToiletCollection } from '@/layers';
 import { ZURICH_CENTER, ZURICH_BASE_ELEVATION } from '@/types';
 import { CONFIG } from '@/lib/config';
 import {
@@ -31,6 +31,7 @@ import {
   createOverheadPolesLayer,
   createFountainsLayer,
   createBenchesLayer,
+  createToiletsLayer,
   TEXTURE_PROVIDERS,
   SWISS_ZOOM_THRESHOLD,
   type TextureProviderId,
@@ -80,6 +81,7 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
   const [tramPoles, setTramPoles] = useState<OverheadPoleCollection | undefined>();
   const [fountains, setFountains] = useState<FountainCollection | undefined>();
   const [benches, setBenches] = useState<BenchCollection | undefined>();
+  const [toilets, setToilets] = useState<ToiletCollection | undefined>();
   const [fps, setFps] = useState(0);
 
   // Debug state
@@ -94,16 +96,23 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
   // Time of day state (default: noon = 12:00 = 720 minutes)
   const [timeOfDay, setTimeOfDay] = useState(12 * 60);
   const [showTimeSlider, setShowTimeSlider] = useState(true);
-  const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({
-    terrain3d: true,
-    mapTiles: false,
-    buildings: true,
-    trees: true,
-    lights: true,
-    tramTracks: true,
-    tramPoles: true,
-    fountains: true,
-    benches: true,
+
+  // Layer state: visibility + opacity per layer
+  interface LayerState {
+    visible: boolean;
+    opacity: number;
+  }
+  const [layerStates, setLayerStates] = useState<Record<string, LayerState>>({
+    terrain3d: { visible: true, opacity: 1 },
+    mapTiles: { visible: false, opacity: 1 },
+    buildings: { visible: true, opacity: 1 },
+    trees: { visible: true, opacity: 1 },
+    lights: { visible: true, opacity: 1 },
+    tramTracks: { visible: true, opacity: 1 },
+    tramPoles: { visible: true, opacity: 1 },
+    fountains: { visible: true, opacity: 1 },
+    benches: { visible: true, opacity: 1 },
+    toilets: { visible: true, opacity: 1 },
   });
   const [terrainTexture, setTerrainTexture] = useState<TextureProviderId>('osm');
 
@@ -379,6 +388,36 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
     };
   }, []);
 
+  // Load toilets data
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadToilets = async () => {
+      try {
+        const response = await fetch(CONFIG.data.toilets);
+        if (!response.ok) {
+          throw new Error(`Failed to load toilets: ${response.status}`);
+        }
+        const data: ToiletCollection = await response.json();
+
+        if (!cancelled) {
+          setToilets(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('Failed to load toilets:', err);
+          // Continue without toilets
+        }
+      }
+    };
+
+    loadToilets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Mark ready when buildings attempt is complete
   useEffect(() => {
     // Give a small delay after buildings load attempt
@@ -523,10 +562,24 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 
   // Handle layer toggle
   const handleLayerToggle = useCallback((layerId: string) => {
-    setLayerVisibility((prev) => ({
-      ...prev,
-      [layerId]: !prev[layerId],
-    }));
+    setLayerStates((prev) => {
+      const current = prev[layerId] ?? { visible: true, opacity: 1 };
+      return {
+        ...prev,
+        [layerId]: { visible: !current.visible, opacity: current.opacity },
+      };
+    });
+  }, []);
+
+  // Handle layer opacity change
+  const handleLayerOpacityChange = useCallback((layerId: string, opacity: number) => {
+    setLayerStates((prev) => {
+      const current = prev[layerId] ?? { visible: true, opacity: 1 };
+      return {
+        ...prev,
+        [layerId]: { visible: current.visible, opacity },
+      };
+    });
   }, []);
 
   // Build layer definitions for LayerPanel
@@ -535,64 +588,82 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
       id: 'terrain3d',
       name: '3D Terrain',
       category: 'Base Map',
-      visible: layerVisibility.terrain3d ?? true,
+      visible: layerStates.terrain3d?.visible ?? true,
+      opacity: layerStates.terrain3d?.opacity ?? 1,
     },
     {
       id: 'mapTiles',
       name: 'Flat Map Tiles',
       category: 'Base Map',
-      visible: layerVisibility.mapTiles ?? false,
+      visible: layerStates.mapTiles?.visible ?? false,
+      opacity: layerStates.mapTiles?.opacity ?? 1,
     },
     {
       id: 'buildings',
       name: 'Buildings',
       category: 'Infrastructure',
-      visible: layerVisibility.buildings ?? true,
+      visible: layerStates.buildings?.visible ?? true,
+      opacity: layerStates.buildings?.opacity ?? 1,
+      supportsOpacity: true,
       count: buildings?.features?.length,
     },
     {
       id: 'trees',
       name: 'Trees',
       category: 'Nature',
-      visible: layerVisibility.trees ?? true,
+      visible: layerStates.trees?.visible ?? true,
+      opacity: layerStates.trees?.opacity ?? 1,
       count: trees?.features?.length,
     },
     {
       id: 'lights',
       name: 'Street Lights',
       category: 'Infrastructure',
-      visible: layerVisibility.lights ?? true,
+      visible: layerStates.lights?.visible ?? true,
+      opacity: layerStates.lights?.opacity ?? 1,
       count: lights?.features?.length,
     },
     {
       id: 'tramTracks',
       name: 'Tram Tracks',
       category: 'Transit',
-      visible: layerVisibility.tramTracks ?? true,
+      visible: layerStates.tramTracks?.visible ?? true,
+      opacity: layerStates.tramTracks?.opacity ?? 1,
       count: tramTracks?.features?.length,
     },
     {
       id: 'tramPoles',
       name: 'Overhead Poles',
       category: 'Transit',
-      visible: layerVisibility.tramPoles ?? true,
+      visible: layerStates.tramPoles?.visible ?? true,
+      opacity: layerStates.tramPoles?.opacity ?? 1,
       count: tramPoles?.features?.length,
     },
     {
       id: 'fountains',
       name: 'Fountains',
       category: 'Infrastructure',
-      visible: layerVisibility.fountains ?? true,
+      visible: layerStates.fountains?.visible ?? true,
+      opacity: layerStates.fountains?.opacity ?? 1,
       count: fountains?.features?.length,
     },
     {
       id: 'benches',
       name: 'Benches',
       category: 'Infrastructure',
-      visible: layerVisibility.benches ?? true,
+      visible: layerStates.benches?.visible ?? true,
+      opacity: layerStates.benches?.opacity ?? 1,
       count: benches?.features?.length,
     },
-  ], [layerVisibility, buildings?.features?.length, trees?.features?.length, lights?.features?.length, tramTracks?.features?.length, tramPoles?.features?.length, fountains?.features?.length, benches?.features?.length]);
+    {
+      id: 'toilets',
+      name: 'Public Toilets',
+      category: 'Infrastructure',
+      visible: layerStates.toilets?.visible ?? true,
+      opacity: layerStates.toilets?.opacity ?? 1,
+      count: toilets?.features?.length,
+    },
+  ], [layerStates, buildings?.features?.length, trees?.features?.length, lights?.features?.length, tramTracks?.features?.length, tramPoles?.features?.length, fountains?.features?.length, benches?.features?.length, toilets?.features?.length]);
 
   // FirstPersonView configuration - memoized to avoid recreation on every render
   const view = useMemo(
@@ -613,53 +684,60 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
     const result = [];
 
     // Base map layer - use 3D terrain OR flat map tiles (not both to avoid z-fighting)
-    if (layerVisibility.terrain3d) {
+    if (layerStates.terrain3d?.visible) {
       result.push(
         createMapterhornTerrainLayer({
           textureUrl: resolvedTextureUrl,
         })
       );
-    } else if (layerVisibility.mapTiles) {
+    } else if (layerStates.mapTiles?.visible) {
       result.push(createMapTileLayer());
     }
 
-    // Buildings (if loaded and visible)
-    if (buildings?.features?.length && layerVisibility.buildings) {
-      result.push(createBuildingsLayer(buildings.features));
+    // Buildings (if loaded and visible) - with opacity support
+    if (buildings?.features?.length && layerStates.buildings?.visible) {
+      result.push(createBuildingsLayer(buildings.features, {
+        opacity: layerStates.buildings.opacity,
+      }));
     }
 
     // Trees (if loaded and visible)
-    if (trees?.features?.length && layerVisibility.trees) {
+    if (trees?.features?.length && layerStates.trees?.visible) {
       result.push(createTreesLayer(trees.features));
     }
 
     // Lights (if loaded and visible)
-    if (lights?.features?.length && layerVisibility.lights) {
+    if (lights?.features?.length && layerStates.lights?.visible) {
       result.push(createLightsLayer(lights.features));
     }
 
     // Tram tracks (if loaded and visible)
-    if (tramTracks?.features?.length && layerVisibility.tramTracks) {
+    if (tramTracks?.features?.length && layerStates.tramTracks?.visible) {
       result.push(createTramTracksLayer(tramTracks.features));
     }
 
     // Overhead poles (if loaded and visible)
-    if (tramPoles?.features?.length && layerVisibility.tramPoles) {
+    if (tramPoles?.features?.length && layerStates.tramPoles?.visible) {
       result.push(createOverheadPolesLayer(tramPoles.features));
     }
 
     // Fountains (if loaded and visible)
-    if (fountains?.features?.length && layerVisibility.fountains) {
+    if (fountains?.features?.length && layerStates.fountains?.visible) {
       result.push(createFountainsLayer(fountains.features));
     }
 
     // Benches (if loaded and visible)
-    if (benches?.features?.length && layerVisibility.benches) {
+    if (benches?.features?.length && layerStates.benches?.visible) {
       result.push(createBenchesLayer(benches.features));
     }
 
+    // Toilets (if loaded and visible)
+    if (toilets?.features?.length && layerStates.toilets?.visible) {
+      result.push(createToiletsLayer(toilets.features));
+    }
+
     return result;
-  }, [buildings, trees, lights, tramTracks, tramPoles, fountains, benches, layerVisibility, resolvedTextureUrl]);
+  }, [buildings, trees, lights, tramTracks, tramPoles, fountains, benches, toilets, layerStates, resolvedTextureUrl]);
 
   return (
     <div
@@ -703,6 +781,7 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
       <LayerPanel
         layers={layerDefinitions}
         onToggle={handleLayerToggle}
+        onOpacityChange={handleLayerOpacityChange}
         visible={showLayerPanel}
         terrainTexture={terrainTexture}
         onTextureChange={setTerrainTexture}

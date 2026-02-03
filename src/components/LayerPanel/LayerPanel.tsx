@@ -18,6 +18,10 @@ export interface LayerDefinition {
   category: string;
   /** Current visibility state */
   visible: boolean;
+  /** Layer opacity (0-1) */
+  opacity?: number;
+  /** Whether this layer supports opacity control */
+  supportsOpacity?: boolean;
   /** Feature count (optional) */
   count?: number;
 }
@@ -27,6 +31,8 @@ export interface LayerPanelProps {
   layers: LayerDefinition[];
   /** Callback when layer visibility is toggled */
   onToggle: (layerId: string) => void;
+  /** Callback when layer opacity is changed */
+  onOpacityChange?: (layerId: string, opacity: number) => void;
   /** Whether the panel is visible */
   visible?: boolean;
   /** Current terrain texture provider ID */
@@ -58,6 +64,7 @@ function groupByCategory(
 export function LayerPanel({
   layers,
   onToggle,
+  onOpacityChange,
   visible = true,
   terrainTexture = 'osm',
   onTextureChange,
@@ -69,6 +76,13 @@ export function LayerPanel({
       onToggle(layerId);
     },
     [onToggle]
+  );
+
+  const handleOpacityChange = useCallback(
+    (layerId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+      onOpacityChange?.(layerId, parseFloat(e.target.value));
+    },
+    [onOpacityChange]
   );
 
   const handleTextureChange = useCallback(
@@ -87,23 +101,43 @@ export function LayerPanel({
   }
 
   return (
-    <div className="layer-panel">
+    <div
+      className="layer-panel"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="layer-panel-header">Layers</div>
       {Object.entries(grouped).map(([category, items]) => (
         <div key={category} className="layer-category">
           <h4>{category}</h4>
           {items.map((layer) => (
-            <label key={layer.id} className="layer-item">
-              <input
-                type="checkbox"
-                checked={layer.visible}
-                onChange={() => handleToggle(layer.id)}
-              />
-              <span className="layer-name">{layer.name}</span>
-              {layer.count !== undefined && (
-                <span className="layer-count">({layer.count.toLocaleString()})</span>
+            <div key={layer.id} className="layer-item-container">
+              <label className="layer-item">
+                <input
+                  type="checkbox"
+                  checked={layer.visible}
+                  onChange={() => handleToggle(layer.id)}
+                />
+                <span className="layer-name">{layer.name}</span>
+                {layer.count !== undefined && (
+                  <span className="layer-count">({layer.count.toLocaleString()})</span>
+                )}
+              </label>
+              {layer.supportsOpacity && layer.visible && (
+                <div className="layer-opacity">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={layer.opacity ?? 1}
+                    onChange={(e) => handleOpacityChange(layer.id, e)}
+                    className="opacity-slider"
+                  />
+                  <span className="opacity-value">{Math.round((layer.opacity ?? 1) * 100)}%</span>
+                </div>
               )}
-            </label>
+            </div>
           ))}
           {/* Texture selector - shown under Base Map when 3D terrain is enabled */}
           {category === 'Base Map' && showTextureSelector && (

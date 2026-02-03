@@ -60,7 +60,11 @@ export function TimeSlider({ value, onChange, visible = true }: TimeSliderProps)
   if (!visible) return null;
 
   return (
-    <div className="time-slider">
+    <div
+      className="time-slider"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="time-slider-header">
         <span className="time-slider-label">Time of Day</span>
         <span className="time-slider-value">{formatTime(value)}</span>

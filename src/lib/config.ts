@@ -69,6 +69,7 @@ export const CONFIG = {
     tramPoles: '/data/zurich-tram-poles.geojson',
     fountains: '/data/zurich-fountains.geojson?v=2',
     benches: '/data/zurich-benches.geojson?v=2',
+    toilets: '/data/zurich-toilets.geojson?v=2',
     terrain: '/data/terrain.png',
     tileIndex: '/data/tiles/buildings/tile-index.json',
   },

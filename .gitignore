@@ -45,3 +45,4 @@ data/processed/
 
 # Test coverage
 coverage/
+.vercel

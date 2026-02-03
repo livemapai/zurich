@@ -102,3 +102,13 @@ export {
   type BenchCollection,
   type BenchProperties,
 } from './BenchesLayer';
+
+// Toilets layer
+export {
+  createToiletsLayer,
+  createMinimapToiletsLayer,
+  type ToiletsLayerConfig,
+  type ToiletFeature,
+  type ToiletCollection,
+  type ToiletProperties,
+} from './ToiletsLayer';

@@ -185,10 +185,13 @@ body {
   position: absolute;
   top: 70px;
   right: 20px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: white;
   padding: 12px;
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 13px;
   max-height: 400px;
   overflow-y: auto;
@@ -223,15 +226,23 @@ body {
   gap: 8px;
   padding: 4px 0;
   cursor: pointer;
+  transition: color 0.15s ease;
 }
 
 .layer-item:hover {
   color: #88c0ff;
 }
 
+.layer-item:active {
+  color: #a8d0ff;
+}
+
 .layer-item input[type="checkbox"] {
   margin: 0;
   cursor: pointer;
+  accent-color: #88c0ff;
+  width: 14px;
+  height: 14px;
 }
 
 .layer-name {
@@ -243,16 +254,78 @@ body {
   font-size: 11px;
 }
 
+.layer-item-container {
+  margin-bottom: 2px;
+}
+
+/* Opacity slider for layers */
+.layer-opacity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 4px 22px;
+}
+
+.opacity-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #88c0ff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.opacity-slider::-webkit-slider-thumb:hover {
+  background: #a8d0ff;
+}
+
+.opacity-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #88c0ff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.opacity-slider::-moz-range-thumb:hover {
+  background: #a8d0ff;
+}
+
+.opacity-value {
+  font-size: 11px;
+  color: #888;
+  font-family: monospace;
+  min-width: 32px;
+  text-align: right;
+}
+
 /* Time slider */
 .time-slider {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: white;
   padding: 12px 16px;
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 13px;
   z-index: 100;
   min-width: 280px;
