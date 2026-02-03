@@ -2,13 +2,12 @@
  * Buildings Layer Factory
  *
  * Creates deck.gl layers for rendering 3D extruded buildings.
+ * Reads terrain elevation from feature.properties.elevation (pre-computed).
  */
 
 import { SolidPolygonLayer } from '@deck.gl/layers';
+import { ZURICH_BASE_ELEVATION } from '@/types';
 import type { BuildingFeature, LngLat, Position3D } from '@/types';
-
-/** Zurich base elevation in meters - set to 0 for coordinate system test */
-const ZURICH_BASE_ELEVATION = 0;
 
 export interface BuildingsLayerConfig {
   id?: string;
@@ -31,9 +30,13 @@ const DEFAULT_CONFIG: Required<BuildingsLayerConfig> = {
 };
 
 /**
- * Extract the outer ring from a building geometry with base elevation
+ * Extract the outer ring from a building geometry with terrain elevation
+ * Reads elevation from feature.properties.elevation (pre-computed by Python script)
  */
-function getPolygonCoordinates(feature: BuildingFeature, baseElevation: number): Position3D[] {
+function getPolygonCoordinates(
+  feature: BuildingFeature,
+  baseElevation: number
+): Position3D[] {
   const { geometry } = feature;
   let coords: LngLat[];
 
@@ -45,12 +48,18 @@ function getPolygonCoordinates(feature: BuildingFeature, baseElevation: number):
     coords = (geometry.coordinates[0] ?? []) as LngLat[];
   }
 
-  // Add base elevation to each coordinate
-  return coords.map(([lng, lat]) => [lng, lat, baseElevation]);
+  // Get terrain elevation from pre-computed property, fallback to base elevation
+  const elevation = feature.properties.elevation ?? baseElevation;
+
+  // Add terrain elevation to each coordinate
+  return coords.map(([lng, lat]) => [lng, lat, elevation]);
 }
 
 /**
  * Create a 3D extruded buildings layer
+ *
+ * Elevation is read from feature.properties.elevation (pre-computed by
+ * scripts/terrain/add_elevations.py). Falls back to baseElevation (408m).
  *
  * @param data - Array of BuildingFeature objects
  * @param config - Layer configuration options
@@ -61,6 +70,15 @@ export function createBuildingsLayer(
 ): SolidPolygonLayer<BuildingFeature> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
   const baseElev = mergedConfig.baseElevation;
+
+  // Debug: log elevation statistics
+  if (data.length > 0) {
+    const elevations = data.map(d => d.properties.elevation ?? baseElev);
+    const withElevation = data.filter(d => d.properties.elevation !== undefined).length;
+    const min = Math.min(...elevations);
+    const max = Math.max(...elevations);
+    console.log(`[Buildings] ${data.length} total, ${withElevation} with elevation, range: ${min.toFixed(1)}m - ${max.toFixed(1)}m`);
+  }
 
   return new SolidPolygonLayer<BuildingFeature>({
     id: mergedConfig.id,

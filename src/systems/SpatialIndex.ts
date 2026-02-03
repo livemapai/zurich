@@ -15,8 +15,9 @@ import type {
   CollisionResult,
   LngLat,
   MetersPosition,
+  AltitudeRange,
 } from '@/types';
-import { METERS_PER_DEGREE } from '@/types';
+import { METERS_PER_DEGREE, ZURICH_BASE_ELEVATION } from '@/types';
 import { CONFIG } from '@/lib/config';
 import { pointInPolygon, closestPointOnSegment, segmentNormalToPoint } from '@/utils/math';
 
@@ -142,6 +143,26 @@ export class SpatialIndex {
   }
 
   /**
+   * Check if the player's vertical range overlaps with a building's vertical extent.
+   *
+   * @param playerAltitude - Player's vertical range (feet to head) in meters above sea level
+   * @param building - Building feature with elevation and height properties
+   * @returns true if vertical ranges overlap, false if player is entirely above or below building
+   */
+  private verticalOverlaps(playerAltitude: AltitudeRange, building: BuildingFeature): boolean {
+    // Building base elevation (defaults to Zurich base elevation if missing)
+    const buildingBase = building.properties.elevation ?? ZURICH_BASE_ELEVATION;
+    // Building top = base + height
+    const buildingTop = buildingBase + building.properties.height;
+
+    // No overlap if player is entirely above or below building
+    // Using exclusive comparisons (>= / <=) for clean boundary behavior:
+    // - If player's feet are at or above building top: no collision
+    // - If player's head is at or below building base: no collision
+    return !(playerAltitude.min >= buildingTop || playerAltitude.max <= buildingBase);
+  }
+
+  /**
    * Check if a point collides with any building
    */
   checkPointCollision(point: LngLat): boolean {
@@ -171,9 +192,14 @@ export class SpatialIndex {
    *
    * @param position - Center of the collision circle [lng, lat]
    * @param radiusMeters - Radius in meters
+   * @param altitudeRange - Optional player altitude range for 3D collision filtering
    * @returns CollisionResult with collision status and wall normal if colliding
    */
-  checkCollision(position: LngLat, radiusMeters?: number): CollisionResult {
+  checkCollision(
+    position: LngLat,
+    radiusMeters?: number,
+    altitudeRange?: AltitudeRange
+  ): CollisionResult {
     const radius = radiusMeters ?? CONFIG.player.collisionRadius;
 
     if (!this.loaded) {
@@ -184,7 +210,7 @@ export class SpatialIndex {
     const radiusLng = radius / METERS_PER_DEGREE.lng;
     const radiusLat = radius / METERS_PER_DEGREE.lat;
 
-    // Query RBush for candidates near the position
+    // Query RBush for candidates near the position (2D spatial query)
     const candidates = this.tree.search({
       minX: position[0] - radiusLng,
       minY: position[1] - radiusLat,
@@ -194,6 +220,12 @@ export class SpatialIndex {
 
     // Check precise collision with each candidate
     for (const candidate of candidates) {
+      // Skip buildings that don't overlap vertically with player
+      // This allows flying over buildings at sufficient altitude
+      if (altitudeRange && !this.verticalOverlaps(altitudeRange, candidate.feature)) {
+        continue;
+      }
+
       const ring = this.getOuterRing(candidate.feature);
 
       // First check if point is inside polygon
@@ -286,6 +318,66 @@ export class SpatialIndex {
 
     // Slide velocity = projection onto tangent
     return [tangent[0] * dot, tangent[1] * dot];
+  }
+
+  /**
+   * Get buildings near a position within a radius.
+   * Uses RBush for efficient spatial query.
+   *
+   * @param position - Center position [lng, lat]
+   * @param radiusMeters - Query radius in meters
+   * @param limit - Maximum number of buildings to return (optional)
+   * @returns Array of building features sorted by distance
+   */
+  getNearby(
+    position: LngLat,
+    radiusMeters: number,
+    limit?: number
+  ): BuildingFeature[] {
+    if (!this.loaded) return [];
+
+    // Convert radius to degrees for bbox query
+    const radiusLng = radiusMeters / METERS_PER_DEGREE.lng;
+    const radiusLat = radiusMeters / METERS_PER_DEGREE.lat;
+
+    // Query RBush for candidates
+    const candidates = this.tree.search({
+      minX: position[0] - radiusLng,
+      minY: position[1] - radiusLat,
+      maxX: position[0] + radiusLng,
+      maxY: position[1] + radiusLat,
+    });
+
+    // Calculate distances and filter by exact radius
+    const radiusSq = radiusMeters * radiusMeters;
+    const withDistance: { feature: BuildingFeature; distance: number }[] = [];
+
+    for (const candidate of candidates) {
+      // Calculate centroid of building bbox
+      const centroidLng = (candidate.minX + candidate.maxX) / 2;
+      const centroidLat = (candidate.minY + candidate.maxY) / 2;
+
+      // Calculate distance in meters
+      const dLng = (position[0] - centroidLng) * METERS_PER_DEGREE.lng;
+      const dLat = (position[1] - centroidLat) * METERS_PER_DEGREE.lat;
+      const distSq = dLng * dLng + dLat * dLat;
+
+      if (distSq <= radiusSq) {
+        withDistance.push({
+          feature: candidate.feature,
+          distance: Math.sqrt(distSq),
+        });
+      }
+    }
+
+    // Sort by distance
+    withDistance.sort((a, b) => a.distance - b.distance);
+
+    // Apply limit if specified
+    const limited = limit ? withDistance.slice(0, limit) : withDistance;
+
+    // Return just the features
+    return limited.map((item) => item.feature);
   }
 }
 

@@ -34,3 +34,71 @@ export {
   createViewConeLayer,
   type MinimapConfig,
 } from './MinimapLayers';
+
+// Trees layers
+export {
+  createTreesLayer,
+  createMinimapTreesLayer,
+  type TreesLayerConfig,
+  type TreeFeature,
+  type TreeCollection,
+  type TreeProperties,
+  type PointGeometry,
+} from './TreesLayer';
+
+// Lights layers
+export {
+  createLightsLayer,
+  createMinimapLightsLayer,
+  type LightsLayerConfig,
+  type LightFeature,
+  type LightProperties,
+} from './LightsLayer';
+
+// Mapterhorn 3D terrain layer
+export {
+  createMapterhornTerrainLayer,
+  TEXTURE_PROVIDERS,
+  SWISS_ZOOM_THRESHOLD,
+  type MapterhornTerrainLayerConfig,
+  type TextureProviderId,
+} from './MapterhornTerrainLayer';
+
+// Tram tracks layer
+export {
+  createTramTracksLayer,
+  createMinimapTramTracksLayer,
+  processTramTracks,
+  type TramTracksLayerConfig,
+  type TramTrackFeature,
+  type TramTrackPath,
+} from './TramTracksLayer';
+
+// Overhead poles layer
+export {
+  createOverheadPolesLayer,
+  processOverheadPoles,
+  type OverheadPolesLayerConfig,
+  type OverheadPoleFeature,
+  type ProcessedPole,
+} from './OverheadPolesLayer';
+
+// Fountains layer
+export {
+  createFountainsLayer,
+  createMinimapFountainsLayer,
+  type FountainsLayerConfig,
+  type FountainFeature,
+  type FountainCollection,
+  type FountainProperties,
+} from './FountainsLayer';
+
+// Benches layer
+export {
+  createBenchesLayer,
+  createMinimapBenchesLayer,
+  type BenchesLayerConfig,
+  type BenchFeature,
+  type BenchCollection,
+  type BenchProperties,
+} from './BenchesLayer';

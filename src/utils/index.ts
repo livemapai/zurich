@@ -3,3 +3,10 @@
  */
 
 export * from './math';
+export * from './treeGeometry';
+export * from './lightGeometry';
+export * from './poleGeometry';
+export * from './fountainGeometry';
+export * from './benchGeometry';
+export * from './zoomCalculator';
+export * from './sunPosition';

@@ -6,10 +6,8 @@
 
 import { SolidPolygonLayer, PathLayer } from '@deck.gl/layers';
 import { ZURICH_BOUNDS } from '@/lib/constants';
+import { ZURICH_BASE_ELEVATION } from '@/types';
 import type { LngLat, Position3D } from '@/types';
-
-/** Zurich base elevation in meters - set to 0 for coordinate system test */
-const ZURICH_BASE_ELEVATION = 0;
 
 export interface TerrainLayerConfig {
   id?: string;

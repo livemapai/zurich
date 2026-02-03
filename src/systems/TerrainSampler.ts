@@ -9,8 +9,12 @@ import type { TerrainData, TerrainQuery, LngLat } from '@/types';
 import { ZURICH_BOUNDS } from '@/types';
 import { lerp } from '@/lib/constants';
 
-/** Default elevation for Zurich city center in meters */
-const DEFAULT_ELEVATION = 408;
+/**
+ * Default elevation when terrain data is not available.
+ * Set to 0 to match the relative coordinate system (ground = 0).
+ * Without terrain data, minimum altitude = eye height (1.7m).
+ */
+const DEFAULT_ELEVATION = 0;
 
 /**
  * TerrainSampler class for elevation queries

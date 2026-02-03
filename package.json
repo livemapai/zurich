@@ -18,11 +18,17 @@
     "@deck.gl/react": "^9.0.0",
     "@luma.gl/core": "^9.0.0",
     "@math.gl/web-mercator": "^4.0.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@react-three/postprocessing": "^3.0.4",
+    "@react-three/rapier": "^2.2.0",
     "maplibre-gl": "^5.17.0",
     "rbush": "^3.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-map-gl": "^8.1.0"
+    "react-map-gl": "^8.1.0",
+    "react-router-dom": "^7.13.0",
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -30,6 +36,7 @@
     "@types/rbush": "^3.0.3",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.182.0",
     "@vitejs/plugin-react": "^4.3.0",
     "jsdom": "^28.0.0",
     "typescript": "^5.7.0",

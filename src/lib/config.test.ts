@@ -71,10 +71,7 @@ describe('CONFIG', () => {
       expect(CONFIG.camera.pitchMin).toBeGreaterThanOrEqual(-90);
       expect(CONFIG.camera.pitchMax).toBeLessThanOrEqual(90);
     });
-
-    it('should have positive minimum altitude', () => {
-      expect(CONFIG.camera.minAltitude).toBeGreaterThan(0);
-    });
+    // Note: minAltitude removed - now calculated dynamically from terrain via AltitudeSystem
   });
 
   describe('data paths', () => {

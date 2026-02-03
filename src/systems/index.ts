@@ -32,3 +32,10 @@ export {
   createTerrainSampler,
   getDefaultElevation,
 } from './TerrainSampler';
+
+// Altitude
+export {
+  AltitudeSystem,
+  createAltitudeSystem,
+  type AltitudeSystemOptions,
+} from './AltitudeSystem';

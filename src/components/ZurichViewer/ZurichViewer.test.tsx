@@ -2,6 +2,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { ZurichViewer } from './ZurichViewer';
 
+// Mock maplibre-gl to avoid browser API requirements in tests
+vi.mock('maplibre-gl', () => ({
+  default: {
+    Map: vi.fn().mockImplementation(() => ({
+      on: vi.fn(),
+      off: vi.fn(),
+      remove: vi.fn(),
+      getSource: vi.fn().mockReturnValue({}),
+      triggerRepaint: vi.fn(),
+      queryTerrainElevation: vi.fn().mockReturnValue(408),
+    })),
+    LngLatBounds: vi.fn().mockImplementation(() => ({})),
+  },
+  Map: vi.fn().mockImplementation(() => ({
+    on: vi.fn(),
+    off: vi.fn(),
+    remove: vi.fn(),
+    getSource: vi.fn().mockReturnValue({}),
+    triggerRepaint: vi.fn(),
+    queryTerrainElevation: vi.fn().mockReturnValue(408),
+  })),
+  LngLatBounds: vi.fn().mockImplementation(() => ({})),
+}));
+
 // Mock deck.gl modules
 vi.mock('@deck.gl/react', () => ({
   default: ({ children, onWebGLInitialized }: { children?: React.ReactNode; onWebGLInitialized?: () => void }) => {
@@ -29,8 +53,30 @@ vi.mock('@deck.gl/core', () => ({
 vi.mock('@/layers', () => ({
   createBuildingsLayer: vi.fn().mockReturnValue({}),
   createMapTileLayer: vi.fn().mockReturnValue({}),
+  createMapterhornTerrainLayer: vi.fn().mockReturnValue({}),
+  createTreesLayer: vi.fn().mockReturnValue({}),
+  createLightsLayer: vi.fn().mockReturnValue({}),
   createMinimapLayers: vi.fn().mockReturnValue([]),
+  createTramTracksLayer: vi.fn().mockReturnValue({}),
+  createOverheadPolesLayer: vi.fn().mockReturnValue({}),
+  TEXTURE_PROVIDERS: {
+    osm: { name: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' },
+    satellite: { name: 'Satellite (Esri)', url: 'https://server.arcgisonline.com/test/{z}/{y}/{x}' },
+    swissimage: { name: 'Swiss Satellite', url: 'https://wmts.geo.admin.ch/test/{z}/{x}/{y}.jpeg' },
+    cartoDark: { name: 'Dark (Carto)', url: 'https://a.basemaps.cartocdn.com/test/{z}/{x}/{y}.png' },
+  },
+  SWISS_ZOOM_THRESHOLD: 12,
 }));
+
+// Mock utils for zoom calculation
+vi.mock('@/utils', async () => {
+  const actual = await vi.importActual('@/utils');
+  return {
+    ...actual,
+    // Return high zoom (>12) so swissimage stays swissimage in tests
+    calculateEffectiveZoom: vi.fn().mockReturnValue(16),
+  };
+});
 
 // Mock Minimap component
 vi.mock('@/components/Minimap', () => ({

@@ -6,9 +6,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { BuildingCollection, CollisionResult, LngLat, Velocity } from '@/types';
+import type { BuildingCollection, CollisionResult, LngLat, Velocity, AltitudeRange } from '@/types';
 import { METERS_PER_DEGREE } from '@/types';
 import { SpatialIndex, createSpatialIndex } from '@/systems';
+import { CONFIG } from '@/lib/config';
 
 interface UseCollisionDetectionOptions {
   /** Building data to load */
@@ -23,12 +24,19 @@ interface UseCollisionDetectionResult {
   /** Number of buildings in the index */
   buildingCount: number;
   /** Check collision at a position */
-  checkCollision: (position: LngLat) => CollisionResult;
-  /** Move with collision detection and wall sliding */
+  checkCollision: (position: LngLat, altitude?: number) => CollisionResult;
+  /**
+   * Move with collision detection and wall sliding
+   * @param currentPos - Current position [lng, lat]
+   * @param velocity - Velocity in m/s
+   * @param deltaTime - Time since last frame in seconds
+   * @param altitude - Player's eye/camera altitude in meters above sea level (for 3D collision)
+   */
   moveWithCollision: (
     currentPos: LngLat,
     velocity: Velocity,
-    deltaTime: number
+    deltaTime: number,
+    altitude: number
   ) => LngLat;
 }
 
@@ -63,11 +71,21 @@ export function useCollisionDetection(
   }, [buildings]);
 
   /**
-   * Check collision at a position
+   * Check collision at a position with optional altitude-aware filtering
+   * @param position - Position [lng, lat] to check
+   * @param altitude - Optional player altitude for 3D collision filtering
    */
   const checkCollision = useCallback(
-    (position: LngLat): CollisionResult => {
-      return indexRef.current.checkCollision(position, collisionRadius);
+    (position: LngLat, altitude?: number): CollisionResult => {
+      // Build altitude range if altitude provided
+      const altitudeRange: AltitudeRange | undefined = altitude !== undefined
+        ? {
+            min: altitude - CONFIG.player.eyeHeight, // feet level
+            max: altitude,                            // head level
+          }
+        : undefined;
+
+      return indexRef.current.checkCollision(position, collisionRadius, altitudeRange);
     },
     [collisionRadius]
   );
@@ -75,16 +93,29 @@ export function useCollisionDetection(
   /**
    * Move with collision detection and wall sliding
    *
-   * Returns the final valid position after collision response
+   * Returns the final valid position after collision response.
+   * Uses altitude-aware collision detection to allow flying over buildings.
+   *
+   * @param currentPos - Current position [lng, lat]
+   * @param velocity - Velocity in m/s
+   * @param deltaTime - Time since last frame in seconds
+   * @param altitude - Player's eye/camera altitude in meters above sea level
    */
   const moveWithCollision = useCallback(
-    (currentPos: LngLat, velocity: Velocity, deltaTime: number): LngLat => {
+    (currentPos: LngLat, velocity: Velocity, deltaTime: number, altitude: number): LngLat => {
       const index = indexRef.current;
 
       // If no movement, return current position
       if (velocity.x === 0 && velocity.y === 0) {
         return currentPos;
       }
+
+      // Build altitude range for 3D collision filtering
+      // Player body modeled as vertical cylinder from feet to head
+      const altitudeRange: AltitudeRange = {
+        min: altitude - CONFIG.player.eyeHeight, // feet level
+        max: altitude,                            // head level (camera position)
+      };
 
       // Calculate proposed position
       const deltaLng = (velocity.x * deltaTime) / METERS_PER_DEGREE.lng;
@@ -95,8 +126,8 @@ export function useCollisionDetection(
         currentPos[1] + deltaLat,
       ];
 
-      // Check collision at proposed position
-      const collision = index.checkCollision(proposedPos, collisionRadius);
+      // Check collision at proposed position with altitude filtering
+      const collision = index.checkCollision(proposedPos, collisionRadius, altitudeRange);
 
       if (!collision.collides) {
         // No collision, move to proposed position
@@ -119,8 +150,8 @@ export function useCollisionDetection(
           currentPos[1] + slidDeltaLat,
         ];
 
-        // Check collision at slid position
-        const slidCollision = index.checkCollision(slidPos, collisionRadius);
+        // Check collision at slid position (with same altitude)
+        const slidCollision = index.checkCollision(slidPos, collisionRadius, altitudeRange);
 
         if (!slidCollision.collides) {
           // Slide succeeded

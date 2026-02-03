@@ -34,6 +34,10 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
 
   const [isLocked, setIsLocked] = useState(false);
 
+  // Use ref to avoid stale closure in event handlers
+  const isLockedRef = useRef(isLocked);
+  isLockedRef.current = isLocked;
+
   // Accumulate mouse movement between frames
   const deltaRef = useRef<MouseDelta>({ x: 0, y: 0 });
 
@@ -41,9 +45,18 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
    * Request pointer lock on the target element
    */
   const requestLock = useCallback(() => {
-    if (!enabled || !targetRef.current) return;
+    if (!enabled || !targetRef.current) {
+      console.warn('Cannot request pointer lock: enabled=', enabled, 'target=', targetRef.current);
+      return;
+    }
 
-    targetRef.current.requestPointerLock?.();
+    // Request pointer lock
+    const element = targetRef.current;
+    if (element.requestPointerLock) {
+      element.requestPointerLock();
+    } else {
+      console.warn('requestPointerLock not supported');
+    }
   }, [enabled, targetRef]);
 
   /**
@@ -64,6 +77,7 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
     return delta;
   }, []);
 
+  // Main effect for pointer lock events
   useEffect(() => {
     if (!enabled) {
       releaseLock();
@@ -74,7 +88,20 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
      * Handle pointer lock state changes
      */
     const handleLockChange = () => {
-      const locked = document.pointerLockElement === targetRef.current;
+      const pointerLockElement = document.pointerLockElement;
+      const target = targetRef.current;
+      const locked = pointerLockElement === target;
+
+      // Debug logging
+      if (pointerLockElement !== null || target !== null) {
+        console.log('Pointer lock change:', {
+          locked,
+          pointerLockElement: pointerLockElement?.tagName,
+          target: target?.tagName,
+          match: pointerLockElement === target,
+        });
+      }
+
       setIsLocked(locked);
 
       // Reset delta when lock state changes
@@ -86,16 +113,18 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
     /**
      * Handle pointer lock errors
      */
-    const handleLockError = () => {
-      console.warn('Pointer lock failed');
+    const handleLockError = (event: Event) => {
+      console.warn('Pointer lock error:', event);
       setIsLocked(false);
     };
 
     /**
      * Handle mouse movement while locked
+     * Uses ref to always check current lock state (avoids stale closure)
      */
     const handleMouseMove = (event: MouseEvent) => {
-      if (!isLocked) return;
+      // Use ref to get current lock state (avoids stale closure)
+      if (!isLockedRef.current) return;
 
       // Accumulate movement delta
       deltaRef.current.x += event.movementX;
@@ -106,12 +135,15 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
     document.addEventListener('pointerlockerror', handleLockError);
     document.addEventListener('mousemove', handleMouseMove);
 
+    // Check initial state (in case we're already locked)
+    handleLockChange();
+
     return () => {
       document.removeEventListener('pointerlockchange', handleLockChange);
       document.removeEventListener('pointerlockerror', handleLockError);
       document.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [enabled, isLocked, releaseLock, targetRef]);
+  }, [enabled, releaseLock, targetRef]);
 
   // Release lock when disabled or unmounted
   useEffect(() => {
@@ -127,7 +159,7 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
   // Handle Escape key to release lock (browser handles this, but we sync state)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isLocked) {
+      if (event.key === 'Escape' && isLockedRef.current) {
         // Browser will release lock, we just ensure state sync
         setIsLocked(false);
       }
@@ -135,7 +167,7 @@ export function useMouseLook(options: UseMouseLookOptions): UseMouseLookResult {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLocked]);
+  }, []);
 
   return {
     isLocked,

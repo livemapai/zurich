@@ -1,4 +1,40 @@
 // ============================================================================
+// COORDINATE SYSTEM REFERENCE
+// ============================================================================
+/**
+ * deck.gl FirstPersonView Coordinate System
+ *
+ * The FirstPersonView uses a hybrid geographic/meter coordinate system:
+ *
+ * GEOGRAPHIC ANCHOR (WGS84 degrees):
+ *   - longitude: degrees east of prime meridian (e.g., 8.5437° for Zurich)
+ *   - latitude: degrees north of equator (e.g., 47.3739° for Zurich)
+ *
+ * METER OFFSET from anchor:
+ *   - position[0]: meters east of anchor (always 0 in this app - we update lng/lat directly)
+ *   - position[1]: meters north of anchor (always 0 in this app - we update lng/lat directly)
+ *   - position[2]: ABSOLUTE altitude in meters above sea level (NOT offset!)
+ *
+ * ALTITUDE SYSTEM:
+ *   - Ground elevation at Zurich city center: ~408m above sea level
+ *   - Eye height: 1.7m above ground
+ *   - Standing altitude = ground elevation + eye height = ~409.7m
+ *   - Flying allows altitude up to CONFIG.player.maxAltitude (1000m default)
+ *   - Minimum altitude = terrain elevation + eye height (can't go below ground)
+ *
+ * MOVEMENT:
+ *   - Horizontal: We update longitude/latitude directly (in degrees)
+ *   - Vertical: We update position[2] (in meters, absolute altitude)
+ *   - Conversion: 1° longitude ≈ 75,500m, 1° latitude ≈ 111,320m at 47°N
+ *
+ * BEARING (compass direction camera is facing):
+ *   - 0° = North, 90° = East, 180° = South, 270° = West
+ *
+ * PITCH (vertical look angle):
+ *   - 0° = horizon, negative = looking up, positive = looking down
+ */
+
+// ============================================================================
 // Coordinate Types
 // ============================================================================
 
@@ -21,7 +57,12 @@ export type Position3D = [lng: number, lat: number, altitude: number];
 /** Zurich city center coordinates - positioned south of building cluster for better initial view */
 export const ZURICH_CENTER: LngLat = [8.5437, 47.3739];
 
-/** Zurich base ground elevation in meters above sea level */
+/**
+ * Zurich base ground elevation for the coordinate system.
+ * Zurich city center is approximately 408m above sea level (WGS84).
+ * This aligns with Mapterhorn terrain tiles which use absolute elevation.
+ * Camera altitude = base elevation + eye height (408 + 1.7 = 409.7m).
+ */
 export const ZURICH_BASE_ELEVATION = 408;
 
 /** Zurich bounding box */
@@ -186,6 +227,82 @@ export interface BuildingCollection {
 }
 
 // ============================================================================
+// GeoJSON Types for Trees
+// ============================================================================
+
+/** Properties for a tree feature */
+export interface TreeProperties {
+  /** Unique tree identifier */
+  id: string;
+  /** Latin species name */
+  species?: string;
+  /** German species name */
+  species_de?: string;
+  /** Tree height in meters */
+  height: number;
+  /** Crown diameter in meters */
+  crown_diameter: number;
+  /** Trunk diameter in meters */
+  trunk_diameter: number;
+  /** Year planted (optional) */
+  year_planted?: number;
+  /** Ground elevation in meters (from terrain) */
+  elevation?: number;
+}
+
+/** GeoJSON Point geometry */
+export interface PointGeometry {
+  type: 'Point';
+  coordinates: LngLat;
+}
+
+/** GeoJSON Feature for a tree */
+export interface TreeFeature {
+  type: 'Feature';
+  properties: TreeProperties;
+  geometry: PointGeometry;
+}
+
+/** GeoJSON FeatureCollection for trees */
+export interface TreeCollection {
+  type: 'FeatureCollection';
+  features: TreeFeature[];
+}
+
+// ============================================================================
+// GeoJSON Types for Lights
+// ============================================================================
+
+/** Properties for a light feature */
+export interface LightProperties {
+  /** Unique light identifier */
+  id: string;
+  /** Light type (street, path, decorative, etc.) */
+  type?: string;
+  /** Pole height in meters (default: 6m) */
+  height: number;
+  /** Power consumption in watts (optional) */
+  power?: number | null;
+  /** Lamp fixture type (optional) */
+  lamp_type?: string | null;
+  /** Ground elevation in meters (from terrain) */
+  elevation?: number;
+}
+
+/** GeoJSON Feature for a light */
+export interface LightFeature {
+  type: 'Feature';
+  properties: LightProperties;
+  geometry: PointGeometry;
+}
+
+/** GeoJSON FeatureCollection for lights */
+export interface LightCollection {
+  type: 'FeatureCollection';
+  features: LightFeature[];
+}
+
+// ============================================================================
 // Collision Detection Types
 // ============================================================================
 
@@ -215,6 +332,20 @@ export interface CollisionResult {
   position: LngLat;
   /** Normal of collision surface (for wall sliding) */
   normal?: MetersPosition;
+}
+
+/**
+ * Vertical range for 3D collision checking
+ *
+ * Models the player as a vertical cylinder - from feet level to head level.
+ * Used to determine if a player's vertical position overlaps with a building's
+ * vertical extent (elevation to elevation + height).
+ */
+export interface AltitudeRange {
+  /** Minimum altitude (feet level) in meters above sea level */
+  min: number;
+  /** Maximum altitude (head level) in meters above sea level */
+  max: number;
 }
 
 /** RBush bounding box with feature reference */
@@ -352,4 +483,92 @@ export interface FrameTiming {
   deltaTime: number;
   /** Total elapsed time in seconds */
   elapsedTime: number;
+}
+
+// ============================================================================
+// GeoJSON Types for Tram Infrastructure
+// ============================================================================
+
+/** Tram track segment properties from VBZ data */
+export interface TramTrackProperties {
+  /** Unique object identifier */
+  objectid: number;
+  /** Street/location name */
+  streckengleisbezeichnung: string;
+  /** Track number (e.g., "70-3") */
+  streckengleisnummer: string;
+  /** Track direction type: "Auswärtsgleis" (outbound) or "Einwärtsgleis" (inbound) */
+  streckengleistyptext: string;
+}
+
+/** GeoJSON MultiLineString geometry */
+export interface MultiLineStringGeometry {
+  type: 'MultiLineString';
+  coordinates: [number, number][][];
+}
+
+/** GeoJSON Feature for a tram track segment */
+export interface TramTrackFeature {
+  type: 'Feature';
+  properties: TramTrackProperties;
+  geometry: MultiLineStringGeometry;
+}
+
+/** GeoJSON FeatureCollection for tram tracks */
+export interface TramTrackCollection {
+  type: 'FeatureCollection';
+  features: TramTrackFeature[];
+}
+
+/** Overhead pole properties from VBZ data */
+export interface OverheadPoleProperties {
+  /** Unique object identifier */
+  objectid: number;
+  /** Pole identification number */
+  nummer: string;
+  /** Top of pole elevation (absolute meters above sea level) */
+  hoehemastok: number;
+  /** Bottom of pole elevation (absolute meters above sea level) */
+  hoehemastuk: number;
+  /** Pole orientation angle in degrees */
+  orientierung: number;
+}
+
+/** GeoJSON MultiPoint geometry */
+export interface MultiPointGeometry {
+  type: 'MultiPoint';
+  coordinates: [number, number][];
+}
+
+/** GeoJSON Feature for an overhead pole */
+export interface OverheadPoleFeature {
+  type: 'Feature';
+  properties: OverheadPoleProperties;
+  geometry: MultiPointGeometry;
+}
+
+/** GeoJSON FeatureCollection for overhead poles */
+export interface OverheadPoleCollection {
+  type: 'FeatureCollection';
+  features: OverheadPoleFeature[];
+}
+
+/** Processed tram track path for rendering */
+export interface TramTrackPath {
+  /** 3D path coordinates [lng, lat, elevation] */
+  path: [number, number, number][];
+  /** Track direction for coloring */
+  direction: string;
+  /** Street/location name */
+  name: string;
+}
+
+/** Processed overhead pole for rendering */
+export interface ProcessedPole {
+  /** Position [lng, lat] */
+  position: [number, number];
+  /** Top of pole elevation (absolute) */
+  topHeight: number;
+  /** Bottom of pole elevation (absolute) */
+  bottomHeight: number;
 }
