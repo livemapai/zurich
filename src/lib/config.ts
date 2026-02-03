@@ -34,7 +34,7 @@ export const CONFIG = {
   /** Movement speeds in meters per second */
   movement: {
     walk: 4.0,
-    run: 8.0,
+    run: 12.0,
     /** Altitude scaling: meters above terrain per 1x speed multiplier (40m = 2x, 400m = 11x) */
     altitudeScaleFactor: 40.0,
     /** Maximum speed multiplier cap (effectively uncapped for fast high-altitude travel) */

@@ -45,13 +45,13 @@ export function Player({
   // Camera control (mouse look)
   const { bearingRef } = usePlayerCamera({ enabled });
 
-  // Movement control (keyboard)
-  const { velocityRef } = usePlayerMovement({ bearingRef, enabled });
+  // Movement control (keyboard) - pass camera for look-direction flying
+  const { velocityRef } = usePlayerMovement({ bearingRef, camera, enabled });
 
   // Initial position in scene coordinates
   const initialPos = useRef(geoToScene(longitude, latitude, altitude));
 
-  // Track if player is flying (Q/E pressed)
+  // Track if player is flying (any vertical velocity from W/S when looking up/down, or Q/E)
   const isFlyingRef = useRef(false);
 
   // Sync camera with rigid body position

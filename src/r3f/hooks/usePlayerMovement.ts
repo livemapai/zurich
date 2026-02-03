@@ -1,7 +1,10 @@
 /**
  * usePlayerMovement - Keyboard Movement Hook
  *
- * Handles WASD movement relative to camera bearing.
+ * Handles WASD movement with look-direction flying.
+ * Forward/backward moves in the 3D direction the camera faces (including pitch).
+ * Strafe (A/D) stays horizontal for intuitive FPS controls.
+ * Q/E provides pure vertical movement for hover control.
  */
 
 import { useRef, useEffect } from 'react';
@@ -21,15 +24,22 @@ interface MovementInput {
 
 interface UsePlayerMovementOptions {
   bearingRef: React.RefObject<number>;
+  camera?: THREE.Camera;
   enabled?: boolean;
   walkSpeed?: number;
   runSpeed?: number;
   flySpeed?: number;
 }
 
+// Reusable vectors to avoid allocation in render loop
+const _forward = new THREE.Vector3();
+const _right = new THREE.Vector3();
+const _velocity = new THREE.Vector3();
+
 export function usePlayerMovement(options: UsePlayerMovementOptions) {
   const {
     bearingRef,
+    camera,
     enabled = true,
     walkSpeed = CONFIG.movement.walk,
     runSpeed = CONFIG.movement.run,
@@ -85,7 +95,7 @@ export function usePlayerMovement(options: UsePlayerMovementOptions) {
     };
   }, [enabled]);
 
-  // Calculate velocity each frame
+  // Calculate velocity each frame using look-direction flying
   useFrame(() => {
     if (!enabled) return;
 
@@ -94,29 +104,43 @@ export function usePlayerMovement(options: UsePlayerMovementOptions) {
     const bearing = bearingRef.current;
     const bearingRad = (bearing * Math.PI) / 180;
 
-    const forwardX = Math.sin(bearingRad);
-    const forwardZ = -Math.cos(bearingRad);
-    const rightX = Math.cos(bearingRad);
-    const rightZ = Math.sin(bearingRad);
-
-    let vx = 0, vz = 0, vy = 0;
-
-    if (input.forward) { vx += forwardX; vz += forwardZ; }
-    if (input.backward) { vx -= forwardX; vz -= forwardZ; }
-    if (input.left) { vx -= rightX; vz -= rightZ; }
-    if (input.right) { vx += rightX; vz += rightZ; }
-
-    // Normalize horizontal
-    const hLen = Math.sqrt(vx * vx + vz * vz);
-    if (hLen > 0) {
-      vx = (vx / hLen) * speed;
-      vz = (vz / hLen) * speed;
+    // Get 3D forward direction from camera (includes pitch for look-direction flying)
+    if (camera) {
+      camera.getWorldDirection(_forward);
+    } else {
+      // Fallback: horizontal only if no camera reference
+      _forward.set(Math.sin(bearingRad), 0, -Math.cos(bearingRad));
     }
 
-    if (input.up) vy = flySpeed;
-    if (input.down) vy = -flySpeed;
+    // Right vector stays horizontal for intuitive strafing
+    // (perpendicular to bearing in XZ plane, ignoring pitch)
+    _right.set(
+      Math.sin(bearingRad + Math.PI / 2),
+      0,
+      -Math.cos(bearingRad + Math.PI / 2)
+    );
 
-    velocityRef.current.set(vx, vy, vz);
+    // Build velocity from input
+    _velocity.set(0, 0, 0);
+
+    // Forward/backward uses 3D look direction (fly up when looking up)
+    if (input.forward) _velocity.add(_forward);
+    if (input.backward) _velocity.sub(_forward);
+
+    // Strafe stays horizontal
+    if (input.left) _velocity.sub(_right);
+    if (input.right) _velocity.add(_right);
+
+    // Normalize diagonal movement and apply speed
+    if (_velocity.lengthSq() > 0) {
+      _velocity.normalize().multiplyScalar(speed);
+    }
+
+    // Q/E for pure vertical control (hover mode)
+    if (input.up) _velocity.y += flySpeed;
+    if (input.down) _velocity.y -= flySpeed;
+
+    velocityRef.current.copy(_velocity);
   });
 
   return { velocityRef, keysRef };
