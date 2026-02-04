@@ -59,7 +59,3 @@ test_rendered_*.png
 /*.png
 *_debug.webp
 
-# Generated GTFS/transit data (large files)
-public/data/gtfs/
-public/data/zurich-tram-trips.json
-public/data/zurich-tram-trips-terrain.json
