@@ -622,3 +622,80 @@
 .transit-route-groups::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* ============================================
+   Mobile Responsive Styles
+   ============================================ */
+
+@media (max-width: 640px) {
+  /* Time Controls - Simplified single row */
+  .transit-controls {
+    padding: 10px 16px;
+    gap: 12px;
+    bottom: 20px;
+    border-radius: 12px;
+    /* Ensure it doesn't overflow screen */
+    max-width: calc(100vw - 32px);
+  }
+
+  /* Play button - larger touch target */
+  .transit-play-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Time display - compact */
+  .transit-time-display {
+    min-width: 50px;
+  }
+
+  .transit-time-value {
+    font-size: 18px;
+  }
+
+  /* Slider - flexible width, fills available space */
+  .transit-slider-container {
+    min-width: 80px;
+    max-width: none;
+    flex: 1;
+  }
+
+  /* Larger slider thumb for touch */
+  .transit-slider::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  .transit-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Speed selector - slightly smaller */
+  .transit-speed-select {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  /* Hide trip badge on mobile - not essential */
+  .transit-trip-badge {
+    display: none;
+  }
+
+  /* Hide all filter/labels UI on mobile */
+  .transit-route-panel,
+  .transit-filter-toggle,
+  .transit-labels-toggle,
+  .transit-hints {
+    display: none !important;
+  }
+
+  /* Loading overlay adjustments */
+  .transit-loading-text {
+    font-size: 1.25rem;
+  }
+
+  .transit-loading-progress {
+    width: 160px;
+  }
+}
