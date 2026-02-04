@@ -43,6 +43,13 @@ data/processed/
 *.geojson
 !public/data/*.geojson
 
+# Large GTFS transit data (stored in Vercel Blob, not Git)
+# Upload with: pnpm tsx scripts/upload-gtfs-to-blob.ts
+public/data/zurich-tram-trips.json
+public/data/zurich-tram-trips-terrain.json
+public/data/gtfs/gtfs-trips.bin
+public/data/gtfs/gtfs-trips.manifest.json
+
 # Test coverage
 coverage/
 .vercel

@@ -4,6 +4,29 @@
  * Centralized settings for the 3D viewer
  */
 
+/**
+ * Vercel Blob base URL for large GTFS files
+ * Set VITE_BLOB_BASE_URL in .env.local or Vercel environment variables
+ * Example: https://abc123.public.blob.vercel-storage.com
+ */
+const BLOB_BASE_URL = import.meta.env.VITE_BLOB_BASE_URL as string | undefined;
+
+/**
+ * Get data URL - uses Vercel Blob for large GTFS files in production,
+ * local paths for development or when BLOB_BASE_URL is not set
+ *
+ * @param localPath - Path starting with / (e.g., "/data/file.json")
+ * @param useBlobForLargeFiles - If true and BLOB_BASE_URL is set, use Blob URL
+ */
+function getDataUrl(localPath: string, useBlobForLargeFiles = false): string {
+	if (useBlobForLargeFiles && BLOB_BASE_URL) {
+		// Strip leading slash and add to blob URL
+		const blobPath = localPath.replace(/^\//, "");
+		return `${BLOB_BASE_URL}/${blobPath}`;
+	}
+	return localPath;
+}
+
 export const CONFIG = {
 	/** Rendering settings */
 	render: {
@@ -67,12 +90,14 @@ export const CONFIG = {
 		lights: "/data/zurich-lights.geojson?v=2",
 		tramTracks: "/data/zurich-tram-tracks.geojson",
 		tramPoles: "/data/zurich-tram-poles.geojson",
-		/** All transit trips (flat, no elevation) - for "all routes" mode */
-		tramTrips: "/data/zurich-tram-trips.json?v=4",
-		/** Limited transit trips with terrain elevation - for 3D terrain mode */
-		tramTripsTerrain: "/data/zurich-tram-trips-terrain.json?v=4",
-		/** Binary GTFS trips with chunking - for memory-optimized streaming */
-		tramTripsBinary: "/data/gtfs/gtfs-trips.bin",
+		/** All transit trips (flat, no elevation) - for "all routes" mode (244MB - uses Blob in production) */
+		tramTrips: getDataUrl("/data/zurich-tram-trips.json", true),
+		/** Limited transit trips with terrain elevation - for 3D terrain mode (59MB - uses Blob in production) */
+		tramTripsTerrain: getDataUrl("/data/zurich-tram-trips-terrain.json", true),
+		/** Binary GTFS trips with chunking - for memory-optimized streaming (40MB - uses Blob in production) */
+		tramTripsBinary: getDataUrl("/data/gtfs/gtfs-trips.bin", true),
+		/** Chunk manifest for binary GTFS - uses Blob in production */
+		tramTripsManifest: getDataUrl("/data/gtfs/gtfs-trips.manifest.json", true),
 		fountains: "/data/zurich-fountains.geojson?v=2",
 		benches: "/data/zurich-benches.geojson?v=2",
 		toilets: "/data/zurich-toilets.geojson?v=2",

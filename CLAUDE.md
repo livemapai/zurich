@@ -214,3 +214,42 @@ python -m scripts.preprocess.build_route_building_index -v
 | Transit (GTFS) | opentransportdata.swiss | Open |
 | Benches, Fountains, Toilets | data.stadt-zuerich.ch | CC0 |
 | Trees | data.stadt-zuerich.ch | CC0 |
+
+## Data Management (Vercel Blob)
+
+Large GTFS transit data is stored in Vercel Blob, not in Git.
+
+**Files stored in Blob:**
+
+| File | Size | Purpose |
+|------|------|---------|
+| `data/gtfs/gtfs-trips.bin` | 40MB | Binary trip data (chunked loading) |
+| `data/gtfs/gtfs-trips.manifest.json` | 12KB | Chunk manifest |
+| `data/zurich-tram-trips.json` | 244MB | JSON fallback (all trips) |
+| `data/zurich-tram-trips-terrain.json` | 59MB | Terrain-adjusted trips |
+
+**When to re-upload:**
+- After regenerating GTFS data with the pipeline
+- When transit schedules update (typically monthly)
+
+**How to upload:**
+
+```bash
+# 1. Get BLOB_READ_WRITE_TOKEN from Vercel Dashboard > Storage > Blob
+# 2. Add to .env.local:
+#    BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+
+# 3. Run upload script
+pnpm tsx scripts/upload-gtfs-to-blob.ts
+```
+
+**Production configuration:**
+
+Set `VITE_BLOB_BASE_URL` in Vercel environment variables:
+```
+VITE_BLOB_BASE_URL=https://<store-id>.public.blob.vercel-storage.com
+```
+
+The app automatically uses Blob URLs when this is set, falling back to local files otherwise.
+
+**Note:** URLs are stable (`addRandomSuffix: false`) - no config changes needed after re-upload.
