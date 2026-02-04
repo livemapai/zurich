@@ -50,9 +50,10 @@ export interface TransitControlsProps {
 /** Speed options for the selector */
 const SPEED_OPTIONS = [
 	{ value: 1, label: "1×" },
+	{ value: 30, label: "30×" },
 	{ value: 60, label: "60×" },
-	{ value: 600, label: "600×" },
-	{ value: 3600, label: "3600×" },
+	{ value: 120, label: "120×" },
+	{ value: 300, label: "300×" },
 ] as const;
 
 /**

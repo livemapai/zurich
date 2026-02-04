@@ -142,13 +142,23 @@ export function useGTFSTrips(
 				const manager = new GTFSChunkManager(binaryUrl);
 				await manager.initialize();
 
+				// Load initial chunks BEFORE marking as ready
+				// This prevents the "no trips until 9 AM" bug where chunk loading
+				// was deferred to an effect that wouldn't run until currentHour changed
+				await manager.updateActiveChunks(currentHour);
+
 				managerRef.current = manager;
 				setRoutes(manager.getRoutes());
 				setIsBinaryMode(true);
-				setTotalTrips(manager.getLoadingState().totalTrips);
+
+				// Update state with loaded chunk info
+				const state = manager.getLoadingState();
+				setLoadedHours(state.loadedHours);
+				setTotalTrips(state.totalTrips);
+
 				setIsLoading(false);
 
-				console.log("[useGTFSTrips] Initialized with binary format");
+				console.log(`[useGTFSTrips] Initialized with binary format, loaded hour ${currentHour}`);
 			} catch (err) {
 				console.warn("[useGTFSTrips] Binary format failed, falling back to JSON", err);
 
@@ -184,7 +194,9 @@ export function useGTFSTrips(
 				managerRef.current = null;
 			}
 		};
-	}, [enabled, binaryUrl, fallbackJsonUrl]);
+	// Note: currentHour is included because we load initial chunks during init.
+	// The initializingRef prevents re-initialization if currentHour changes.
+	}, [enabled, binaryUrl, fallbackJsonUrl, currentHour]);
 
 	// Update chunks when hour changes
 	useEffect(() => {

@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ViewerPage } from '@/pages/ViewerPage';
 import { GamePage } from '@/pages/GamePage';
 import { TransitPage } from '@/pages/TransitPage';
+import { StylesPage } from '@/pages/StylesPage';
 
 function App() {
   return (
@@ -26,6 +27,9 @@ function App() {
 
         {/* Transit visualization mode */}
         <Route path="/transit" element={<TransitPage />} />
+
+        {/* AI Styles viewer mode */}
+        <Route path="/styles" element={<StylesPage />} />
 
         {/* Fallback for unknown routes */}
         <Route path="*" element={<Navigate to="/viewer" replace />} />

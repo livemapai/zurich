@@ -24,6 +24,9 @@ const CARTO_POSITRON_URL = 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@
 /** CartoDB Dark Matter - Dark theme with cyan highlights (free tier) */
 const CARTO_DARK_URL = 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png';
 
+/** AI-Generated Cyberpunk style - local tiles only at zoom 16 */
+const AI_CYBERPUNK_URL = '/tiles/ai-cyberpunk/{z}/{x}/{y}.webp';
+
 /**
  * Map tile provider configuration
  */
@@ -39,6 +42,10 @@ export interface MapTileProvider {
  * Similar to TEXTURE_PROVIDERS for terrain, but for flat 2D map tiles
  */
 export const MAP_TILE_PROVIDERS = {
+  cyberpunk: {
+    name: 'AI Cyberpunk',
+    url: AI_CYBERPUNK_URL,
+  },
   voyager: {
     name: 'CartoDB Voyager',
     url: CARTO_VOYAGER_URL,
@@ -163,4 +170,5 @@ export {
   CARTO_VOYAGER_URL,
   CARTO_POSITRON_URL,
   CARTO_DARK_URL,
+  AI_CYBERPUNK_URL,
 };

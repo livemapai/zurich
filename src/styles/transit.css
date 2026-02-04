@@ -262,6 +262,53 @@
   color: white;
 }
 
+/* Route Search */
+.transit-route-search {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.transit-route-search-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 32px 8px 12px;
+  font-size: 13px;
+  color: white;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.transit-route-search-input::placeholder {
+  color: #666;
+}
+
+.transit-route-search-input:focus {
+  border-color: rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+}
+
+.transit-route-search-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.transit-route-search-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
 /* Route Actions */
 .transit-route-actions {
   display: flex;
@@ -459,6 +506,61 @@
 
 /* Hide toggle when panel is open */
 .transit-route-panel ~ .transit-filter-toggle {
+  display: none;
+}
+
+/* ============================================
+   Labels Toggle Button
+   ============================================ */
+
+.transit-labels-toggle {
+  position: absolute;
+  top: 20px;
+  right: 110px;
+  background: rgba(10, 10, 15, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+  z-index: 99;
+}
+
+.transit-labels-toggle:hover {
+  background: rgba(10, 10, 15, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #999;
+}
+
+.transit-labels-toggle.active {
+  color: #00d4ff;
+  border-color: rgba(0, 212, 255, 0.3);
+}
+
+.transit-labels-toggle.active:hover {
+  color: #00d4ff;
+  border-color: rgba(0, 212, 255, 0.5);
+}
+
+.transit-labels-icon {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.transit-labels-label {
+  font-weight: 500;
+}
+
+/* Hide labels toggle when route panel is open */
+.transit-route-panel ~ .transit-labels-toggle {
   display: none;
 }
 

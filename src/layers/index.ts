@@ -25,6 +25,7 @@ export {
 	OSM_TILE_URL,
 	STADIA_TILE_URL,
 	CARTO_DARK_URL,
+	AI_CYBERPUNK_URL,
 	MAP_TILE_PROVIDERS,
 	type MapTileLayerConfig,
 	type MapTileProviderId,
@@ -123,3 +124,11 @@ export {
 	type TramTripsLayerConfig,
 	type TramTrip,
 } from "./TramTripsLayer";
+
+// Vehicle labels layer
+export {
+	createVehicleLabelsLayer,
+	shouldShowVehicleLabels,
+	VEHICLE_LABELS_MIN_ZOOM,
+	type VehicleLabelsLayerConfig,
+} from "./VehicleLabelsLayer";

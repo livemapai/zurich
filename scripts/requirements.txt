@@ -32,11 +32,14 @@ pysolar>=0.10       # Sun position calculations
 pytest>=7.4.0
 pytest-cov>=4.1.0
 
-# AI-powered tile relighting (optional)
+# AI-powered tile generation (optional)
 # Uses existing deps: requests, numpy, pillow, scipy
 # Requires API keys:
-#   - FAL_KEY for IC-Light (https://fal.ai)
 #   - GOOGLE_API_KEY for Gemini (https://aistudio.google.com)
+#   - REPLICATE_API_TOKEN for Stable Diffusion (https://replicate.com)
+
+# Stable Diffusion via Replicate (for ControlNet Depth pipeline)
+replicate>=0.25.0
 
 # Shadow removal + Ray tracing pipeline (optional but recommended)
 simple-lama-inpainting>=0.1.0  # AI inpainting for shadow removal

@@ -17,7 +17,7 @@
  * ```
  */
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { RouteType, ROUTE_TYPE_LABELS } from "@/types";
 import type { RouteInfo } from "@/utils/transitRoutes";
 
@@ -53,35 +53,57 @@ export function RouteFilterPanel({
 		() => new Set([RouteType.Tram])
 	);
 
-	// Group routes by type
+	// Search state
+	const [searchQuery, setSearchQuery] = useState("");
+
+	// Filter routes by search query
+	const filteredRoutes = useMemo(() => {
+		if (!searchQuery.trim()) {
+			return routes;
+		}
+
+		const query = searchQuery.toLowerCase().trim();
+		return routes.filter((route) =>
+			route.name.toLowerCase().includes(query)
+		);
+	}, [routes, searchQuery]);
+
+	// Group filtered routes by type
 	const routesByType = useMemo(() => {
 		const grouped = new Map<RouteType, RouteInfo[]>();
-		for (const route of routes) {
+		for (const route of filteredRoutes) {
 			const existing = grouped.get(route.type) ?? [];
 			existing.push(route);
 			grouped.set(route.type, existing);
 		}
 		// Sort by type (trams first)
 		return Array.from(grouped.entries()).sort(([a], [b]) => a - b);
-	}, [routes]);
+	}, [filteredRoutes]);
 
-	// Calculate visibility stats per type
+	// Calculate visibility stats per type (from filtered routes)
 	const typeStats = useMemo(() => {
 		const stats = new Map<RouteType, { visible: number; total: number }>();
-		for (const route of routes) {
+		for (const route of filteredRoutes) {
 			const existing = stats.get(route.type) ?? { visible: 0, total: 0 };
 			existing.total++;
 			if (route.visible) existing.visible++;
 			stats.set(route.type, existing);
 		}
 		return stats;
-	}, [routes]);
+	}, [filteredRoutes]);
 
-	// Total stats
+	// Total stats (filtered)
 	const totalStats = useMemo(() => {
-		const visible = routes.filter((r) => r.visible).length;
-		return { visible, total: routes.length };
-	}, [routes]);
+		const visible = filteredRoutes.filter((r) => r.visible).length;
+		return { visible, total: filteredRoutes.length };
+	}, [filteredRoutes]);
+
+	// Clear search when panel closes
+	useEffect(() => {
+		if (!visible) {
+			setSearchQuery("");
+		}
+	}, [visible]);
 
 	// Toggle type expansion
 	const toggleTypeExpanded = useCallback((type: RouteType) => {
@@ -118,10 +140,32 @@ export function RouteFilterPanel({
 				</button>
 			</div>
 
+			{/* Search input */}
+			<div className="transit-route-search">
+				<input
+					type="text"
+					className="transit-route-search-input"
+					placeholder="Search routes..."
+					value={searchQuery}
+					onChange={(e) => setSearchQuery(e.target.value)}
+					autoComplete="off"
+				/>
+				{searchQuery && (
+					<button
+						className="transit-route-search-clear"
+						onClick={() => setSearchQuery("")}
+						title="Clear search"
+					>
+						✕
+					</button>
+				)}
+			</div>
+
 			{/* Global actions */}
 			<div className="transit-route-actions">
 				<span className="transit-route-stats">
-					{totalStats.visible} / {totalStats.total} routes
+					{totalStats.visible} / {totalStats.total} in view
+					{searchQuery && ` (filtered)`}
 				</span>
 				<div className="transit-route-action-btns">
 					<button

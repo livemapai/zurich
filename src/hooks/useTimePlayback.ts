@@ -73,7 +73,7 @@ const DEFAULTS = {
 	initialTime: 480, // 8:00 AM
 	minTime: 300, // 5:00 AM
 	maxTime: 1320, // 10:00 PM
-	defaultSpeed: 600, // 600x = 10 sim-minutes per real second
+	defaultSpeed: 60, // 60x = 1 sim-minute per real second
 	autoPlay: false,
 } as const;
 

@@ -155,3 +155,124 @@ export function getRouteNamesByType(
 			.map((trip) => trip.route_short_name)
 	);
 }
+
+/** Geographic bounding box for viewport filtering */
+export interface ViewportBounds {
+	minLng: number;
+	maxLng: number;
+	minLat: number;
+	maxLat: number;
+}
+
+/**
+ * Check if a point falls within bounds.
+ */
+function pointInBounds(
+	lng: number,
+	lat: number,
+	bounds: ViewportBounds
+): boolean {
+	return (
+		lng >= bounds.minLng &&
+		lng <= bounds.maxLng &&
+		lat >= bounds.minLat &&
+		lat <= bounds.maxLat
+	);
+}
+
+/**
+ * Check if any point of a trip's path falls within viewport bounds.
+ * Uses early exit for efficiency - returns true on first match.
+ *
+ * @param trip - Trip to check
+ * @param bounds - Viewport bounds
+ * @returns True if any path point is within bounds
+ */
+function tripInViewport(trip: RenderableTrip, bounds: ViewportBounds): boolean {
+	// Check every Nth point for efficiency on long paths
+	// Most transit paths have 50-500 points; checking every 5th is usually sufficient
+	const step = Math.max(1, Math.floor(trip.path.length / 50));
+
+	for (let i = 0; i < trip.path.length; i += step) {
+		const point = trip.path[i];
+		if (point && pointInBounds(point[0], point[1], bounds)) {
+			return true;
+		}
+	}
+
+	// Always check last point
+	if (trip.path.length > 0) {
+		const last = trip.path[trip.path.length - 1];
+		if (last && pointInBounds(last[0], last[1], bounds)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Get unique route names that have trips visible in the viewport.
+ *
+ * Efficiently filters trips to find routes with at least one trip
+ * passing through the current viewport bounds.
+ *
+ * @param trips - All trips from GTFS data
+ * @param bounds - Current viewport bounds
+ * @returns Set of route names visible in viewport
+ *
+ * @example
+ * ```typescript
+ * const bounds = getViewportBounds(viewState, width, height);
+ * const visibleRouteNames = getRoutesInViewport(trips, bounds);
+ * // Returns: Set { "10", "11", "4" }
+ * ```
+ */
+export function getRoutesInViewport(
+	trips: RenderableTrip[],
+	bounds: ViewportBounds
+): Set<string> {
+	const visibleRoutes = new Set<string>();
+
+	// Track which routes we've already confirmed as visible
+	// to avoid redundant path checks
+	for (const trip of trips) {
+		// Skip if we already know this route is visible
+		if (visibleRoutes.has(trip.route_short_name)) {
+			continue;
+		}
+
+		if (tripInViewport(trip, bounds)) {
+			visibleRoutes.add(trip.route_short_name);
+		}
+	}
+
+	return visibleRoutes;
+}
+
+/**
+ * Extract route info for only routes visible in viewport.
+ *
+ * Combines viewport filtering with route info extraction for efficient
+ * panel updates. Only processes trips that are in the viewport.
+ *
+ * @param trips - All trips from GTFS data
+ * @param bounds - Current viewport bounds
+ * @param visibleRoutes - Set of routes currently toggled visible
+ * @returns Sorted array of route info for routes in viewport
+ */
+export function extractViewportRouteInfo(
+	trips: RenderableTrip[],
+	bounds: ViewportBounds,
+	visibleRoutes: Set<string>
+): RouteInfo[] {
+	// First, find which routes are in viewport
+	const routesInViewport = getRoutesInViewport(trips, bounds);
+
+	// Filter trips to only those routes, then extract info
+	const filteredTrips = trips.filter((trip) =>
+		routesInViewport.has(trip.route_short_name)
+	);
+
+	return extractRouteInfo(filteredTrips, visibleRoutes);
+}

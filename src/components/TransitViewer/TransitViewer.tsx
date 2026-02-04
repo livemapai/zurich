@@ -13,15 +13,30 @@
  * ```
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { MapView, LightingEffect, AmbientLight, PointLight } from "@deck.gl/core";
 
-import { useTimePlayback, useGTFSTrips } from "@/hooks";
-import { createTramTripsLayer, createMapTileLayer, CARTO_DARK_URL } from "@/layers";
+import { useTimePlayback, useGTFSTrips, useViewportBounds } from "@/hooks";
+import {
+	createTramTripsLayer,
+	createMapTileLayer,
+	createVehicleLabelsLayer,
+	shouldShowVehicleLabels,
+	AI_CYBERPUNK_URL,
+	CARTO_DARK_URL,
+} from "@/layers";
 import { CONFIG } from "@/lib/config";
 import { RouteType } from "@/types";
-import { extractRouteInfo, getAllRouteNames, getRouteNamesByType } from "@/utils/transitRoutes";
+import {
+	getAllRouteNames,
+	getRouteNamesByType,
+	extractViewportRouteInfo,
+} from "@/utils/transitRoutes";
+import {
+	getActiveVehiclePositions,
+	deduplicateByGrid,
+} from "@/utils/vehiclePosition";
 
 import { TransitControls } from "./TransitControls";
 import { RouteFilterPanel } from "./RouteFilterPanel";
@@ -34,11 +49,11 @@ export interface TransitViewerProps {
 	onError?: (error: Error) => void;
 }
 
-/** Initial camera position - centered on Zurich HB */
+/** Initial camera position - centered on Zurich HB at zoom 16 for cyberpunk tiles */
 const INITIAL_VIEW_STATE = {
 	longitude: 8.5417,
 	latitude: 47.3769,
-	zoom: 13,
+	zoom: 16, // Match available cyberpunk tile zoom level
 	pitch: 45,
 	bearing: 0,
 };
@@ -68,6 +83,8 @@ const createLightingEffect = () =>
  */
 export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 	// Time playback state (extracted hook)
+	// autoPlay: true is now safe because useGTFSTrips loads initial chunks
+	// during initialization, ensuring data is ready before playback starts
 	const {
 		timeOfDay,
 		setTimeOfDay,
@@ -80,7 +97,7 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 		maxTime,
 	} = useTimePlayback({
 		initialTime: 480, // 8:00 AM
-		autoPlay: true,
+		autoPlay: true, // Safe now - init loads chunks before marking ready
 	});
 
 	// Trip data from GTFS binary/JSON
@@ -99,8 +116,39 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 	const [visibleRoutes, setVisibleRoutes] = useState<Set<string>>(new Set());
 	const [showRoutePanel, setShowRoutePanel] = useState(false);
 
+	// Vehicle labels toggle (can be toggled with 'L' key)
+	const [showVehicleLabels, setShowVehicleLabels] = useState(true);
+
 	// View state
 	const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
+
+	// Viewport dimensions for bounds calculation
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [viewportSize, setViewportSize] = useState({ width: 1280, height: 720 });
+
+	// Track container size
+	useEffect(() => {
+		const updateSize = () => {
+			if (containerRef.current) {
+				setViewportSize({
+					width: containerRef.current.clientWidth,
+					height: containerRef.current.clientHeight,
+				});
+			}
+		};
+
+		updateSize();
+		window.addEventListener("resize", updateSize);
+		return () => window.removeEventListener("resize", updateSize);
+	}, []);
+
+	// Get debounced viewport bounds for filtering
+	const viewportBounds = useViewportBounds(
+		viewState,
+		viewportSize.width,
+		viewportSize.height,
+		150 // 150ms debounce for smooth interaction
+	);
 
 	// Initialize all routes as visible when trips load
 	useEffect(() => {
@@ -126,11 +174,23 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 		}
 	}, [tripsError, onError]);
 
-	// Route info for filter panel
+	// Route info for filter panel - filtered by viewport
 	const routeInfo = useMemo(
-		() => extractRouteInfo(trips, visibleRoutes),
-		[trips, visibleRoutes]
+		() => extractViewportRouteInfo(trips, viewportBounds, visibleRoutes),
+		[trips, viewportBounds, visibleRoutes]
 	);
+
+	// Vehicle positions for labels (only calculated when zoomed in and enabled)
+	const vehiclePositions = useMemo(() => {
+		// Skip calculation if labels are disabled or not zoomed in enough
+		if (!showVehicleLabels || !shouldShowVehicleLabels(viewState.zoom)) {
+			return [];
+		}
+
+		const positions = getActiveVehiclePositions(trips, timeSeconds, visibleRoutes);
+		// Deduplicate to avoid clustered labels for same route
+		return deduplicateByGrid(positions, 0.002); // ~200m grid for less clutter
+	}, [trips, timeSeconds, visibleRoutes, viewState.zoom, showVehicleLabels]);
 
 	// Handle individual route toggle
 	const handleRouteToggle = useCallback((routeName: string) => {
@@ -177,16 +237,21 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 		[trips]
 	);
 
-	// Toggle route panel with R key
+	// Keyboard shortcuts
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
+			// R - Toggle route panel
 			if (e.code === "KeyR" && !e.ctrlKey && !e.metaKey) {
 				setShowRoutePanel((prev) => !prev);
 			}
-			// Space to toggle play
+			// Space - Toggle play/pause
 			if (e.code === "Space" && !e.ctrlKey && !e.metaKey) {
 				e.preventDefault();
 				togglePlaying();
+			}
+			// L - Toggle vehicle labels
+			if (e.code === "KeyL" && !e.ctrlKey && !e.metaKey) {
+				setShowVehicleLabels((prev) => !prev);
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
@@ -198,25 +263,43 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 
 	// Create layers
 	const layers = useMemo(() => {
-		const basemap = createMapTileLayer({
-			id: "transit-basemap",
+		// Use cyberpunk tiles as primary with dark fallback for unsupported zooms
+		// Cyberpunk tiles only exist at zoom 16, so we layer with CARTO Dark underneath
+		const darkBasemap = createMapTileLayer({
+			id: "transit-basemap-dark",
 			tileUrl: CARTO_DARK_URL,
-			flatBounds: true, // Use 2D bounds for MapView with flat transit data
+			flatBounds: true,
 		});
 
-		if (trips.length === 0) return [basemap];
+		const cyberpunkOverlay = createMapTileLayer({
+			id: "transit-basemap-cyberpunk",
+			tileUrl: AI_CYBERPUNK_URL,
+			minZoom: 16,
+			maxZoom: 16,
+			flatBounds: true,
+		});
 
-		return [
-			basemap,
-			createTramTripsLayer(trips, {
-				currentTime: timeSeconds,
-				trailLength: 180,
-				opacity: 0.9,
-				visibleRoutes: visibleRoutes.size > 0 ? visibleRoutes : undefined,
-				flatPaths: true, // Use 2D paths for MapView
-			}),
-		];
-	}, [trips, timeSeconds, visibleRoutes]);
+		if (trips.length === 0) return [darkBasemap, cyberpunkOverlay];
+
+		const tripsLayer = createTramTripsLayer(trips, {
+			currentTime: timeSeconds,
+			trailLength: 180,
+			opacity: 0.9,
+			visibleRoutes: visibleRoutes.size > 0 ? visibleRoutes : undefined,
+			flatPaths: true, // Use 2D paths for MapView
+		});
+
+		const labelsLayer = createVehicleLabelsLayer(vehiclePositions, {
+			id: "vehicle-labels",
+			visible: showVehicleLabels && shouldShowVehicleLabels(viewState.zoom),
+			fontSize: 16, // Larger for better visibility
+			backgroundOpacity: 240,
+			collisionEnabled: true,
+			collisionScale: 2.0,
+		});
+
+		return [darkBasemap, cyberpunkOverlay, tripsLayer, labelsLayer];
+	}, [trips, timeSeconds, visibleRoutes, vehiclePositions, viewState.zoom, showVehicleLabels]);
 
 	// View configuration
 	const views = useMemo(
@@ -238,7 +321,7 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 	);
 
 	return (
-		<div className="transit-viewer">
+		<div className="transit-viewer" ref={containerRef}>
 			<DeckGL
 				views={views}
 				viewState={viewState}
@@ -288,10 +371,21 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 				<span className="transit-filter-label">Routes</span>
 			</button>
 
+			{/* Labels toggle button */}
+			<button
+				className={`transit-labels-toggle ${showVehicleLabels ? "active" : ""}`}
+				onClick={() => setShowVehicleLabels((prev) => !prev)}
+				title="Toggle vehicle labels (L)"
+			>
+				<span className="transit-labels-icon">#</span>
+				<span className="transit-labels-label">Labels</span>
+			</button>
+
 			{/* Keyboard hints */}
 			<div className="transit-hints">
 				<span><kbd>Space</kbd> Play/Pause</span>
 				<span><kbd>R</kbd> Routes</span>
+				<span><kbd>L</kbd> Labels</span>
 			</div>
 		</div>
 	);
