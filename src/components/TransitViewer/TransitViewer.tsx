@@ -23,7 +23,6 @@ import {
 	createMapTileLayer,
 	createVehicleLabelsLayer,
 	shouldShowVehicleLabels,
-	AI_CYBERPUNK_URL,
 	CARTO_DARK_URL,
 } from "@/layers";
 import { CONFIG } from "@/lib/config";
@@ -263,23 +262,13 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 
 	// Create layers
 	const layers = useMemo(() => {
-		// Use cyberpunk tiles as primary with dark fallback for unsupported zooms
-		// Cyberpunk tiles only exist at zoom 16, so we layer with CARTO Dark underneath
 		const darkBasemap = createMapTileLayer({
 			id: "transit-basemap-dark",
 			tileUrl: CARTO_DARK_URL,
 			flatBounds: true,
 		});
 
-		const cyberpunkOverlay = createMapTileLayer({
-			id: "transit-basemap-cyberpunk",
-			tileUrl: AI_CYBERPUNK_URL,
-			minZoom: 16,
-			maxZoom: 16,
-			flatBounds: true,
-		});
-
-		if (trips.length === 0) return [darkBasemap, cyberpunkOverlay];
+		if (trips.length === 0) return [darkBasemap];
 
 		const tripsLayer = createTramTripsLayer(trips, {
 			currentTime: timeSeconds,
@@ -298,7 +287,7 @@ export function TransitViewer({ onLoadProgress, onError }: TransitViewerProps) {
 			collisionScale: 2.0,
 		});
 
-		return [darkBasemap, cyberpunkOverlay, tripsLayer, labelsLayer];
+		return [darkBasemap, tripsLayer, labelsLayer];
 	}, [trips, timeSeconds, visibleRoutes, vehiclePositions, viewState.zoom, showVehicleLabels]);
 
 	// View configuration
