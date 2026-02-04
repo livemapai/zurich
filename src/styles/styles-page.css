@@ -324,6 +324,11 @@
   color: #f472b6;
 }
 
+.generator-badge.blender {
+  background: rgba(255, 140, 0, 0.2);
+  color: #ffa500;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .styles-panel {

@@ -4,9 +4,10 @@ Blender scene builder - runs INSIDE Blender.
 This script is executed by Blender headlessly to render tiles.
 It builds a 3D scene from exported tile data and renders using Cycles.
 
-Supports two rendering modes:
+Supports three rendering modes:
 - Shadow mode (default): Renders shadow-only pass for compositing
 - Color mode: Renders full-color tiles with styled materials
+- Depth mode: Renders Z-buffer depth pass for AI style transfer (ControlNet)
 
 Usage (called by BlenderShadowRenderer or BlenderTileRenderer):
     blender --background --python blender_scene.py -- \\
@@ -19,6 +20,7 @@ The data directory should contain:
 Output:
     - Shadow mode: Grayscale PNG where black=shadow, white=lit
     - Color mode: Full RGB PNG with colored buildings/terrain
+    - Depth mode: Grayscale PNG where white=far, black=near (normalized Z-buffer)
 """
 
 # This script runs inside Blender, so bpy is available
@@ -494,6 +496,113 @@ def setup_ground_plane(
     return plane
 
 
+def setup_depth_render(
+    config: dict,
+    scene_width: float,
+    scene_height: float,
+) -> None:
+    """Configure Cycles renderer for depth pass output.
+
+    Renders a normalized Z-buffer where:
+    - 0 (black) = near plane
+    - 1 (white) = far plane
+
+    This is used for ControlNet Depth conditioning in AI style transfer.
+
+    Args:
+        config: Render configuration dictionary
+        scene_width: Scene width in meters (for camera)
+        scene_height: Scene height in meters (for camera)
+    """
+    if bpy is None:
+        return
+
+    scene = bpy.context.scene
+
+    # Use Cycles renderer
+    scene.render.engine = "CYCLES"
+
+    # Configure GPU if requested
+    prefs = bpy.context.preferences.addons["cycles"].preferences
+
+    if config.get("use_gpu", True):
+        device = config.get("device", "METAL")
+        prefs.compute_device_type = device
+        scene.cycles.device = "GPU"
+        prefs.get_devices()
+        for d in prefs.devices:
+            d.use = True
+    else:
+        scene.cycles.device = "CPU"
+
+    # Minimal samples for depth (no AA/shading needed)
+    scene.cycles.samples = 1
+    scene.cycles.use_denoising = False
+
+    # Output resolution
+    size = config.get("image_size", 512)
+    scene.render.resolution_x = size
+    scene.render.resolution_y = size
+    scene.render.resolution_percentage = 100
+
+    # Transparent background (depth pass will be composited)
+    scene.render.film_transparent = True
+
+    # Setup orthographic camera (top-down) - CRITICAL for depth consistency
+    cam_data = bpy.data.cameras.new("Camera")
+    cam_data.type = "ORTHO"
+    cam_data.ortho_scale = scene_width
+
+    # Set clip planes for consistent depth range
+    cam_data.clip_start = 1.0     # Near plane: 1m
+    cam_data.clip_end = 600.0     # Far plane: 600m (covers all buildings + camera height)
+
+    cam_obj = bpy.data.objects.new("Camera", cam_data)
+    cam_obj.location = (scene_width / 2, scene_height / 2, 500)
+    cam_obj.rotation_euler = (0, 0, 0)
+
+    bpy.context.collection.objects.link(cam_obj)
+    scene.camera = cam_obj
+
+    # Enable Z pass in view layers
+    scene.view_layers["ViewLayer"].use_pass_z = True
+
+    # Setup compositor nodes for depth output
+    scene.use_nodes = True
+    tree = scene.node_tree
+    nodes = tree.nodes
+    links = tree.links
+
+    # Clear existing nodes
+    nodes.clear()
+
+    # Create render layers node
+    render_layers = nodes.new("CompositorNodeRLayers")
+    render_layers.location = (0, 0)
+
+    # Create normalize node to map depth to 0-1 range
+    normalize = nodes.new("CompositorNodeNormalize")
+    normalize.location = (200, 0)
+
+    # Create invert node (so near=black, far=white - ControlNet convention)
+    invert = nodes.new("CompositorNodeInvert")
+    invert.location = (400, 0)
+
+    # Create composite output
+    composite = nodes.new("CompositorNodeComposite")
+    composite.location = (600, 0)
+
+    # Connect nodes: RenderLayers.Depth -> Normalize -> Invert -> Composite
+    links.new(render_layers.outputs["Depth"], normalize.inputs[0])
+    links.new(normalize.outputs[0], invert.inputs["Color"])
+    links.new(invert.outputs["Color"], composite.inputs["Image"])
+
+    # Configure output
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "BW"  # Grayscale depth
+    scene.render.image_settings.color_depth = "16"  # 16-bit for precision
+
+
 def setup_color_render(
     config: dict,
     style_data: dict,
@@ -567,17 +676,42 @@ def setup_color_render(
             background.outputs["Background"], output.inputs["Surface"]
         )
 
-    # Setup orthographic camera (top-down)
+    # Setup camera - orthographic with optional isometric tilt for 3D depth
     cam_data = bpy.data.cameras.new("Camera")
     cam_data.type = "ORTHO"
-    # Scene is now square in Web Mercator, so width ≈ height
-    # Use scene_width directly (no need for max() with square scenes)
     cam_data.ortho_scale = scene_width
 
     cam_obj = bpy.data.objects.new("Camera", cam_data)
-    # Position camera centered over scene
-    cam_obj.location = (scene_width / 2, scene_height / 2, 500)
-    cam_obj.rotation_euler = (0, 0, 0)
+
+    # Check if isometric view is requested (shows building facades)
+    import math
+    isometric = style_data.get("isometric", False)
+    isometric_angle = style_data.get("isometric_angle", 30)  # degrees from vertical
+
+    if isometric:
+        # Isometric camera: tilted to show building walls
+        # Angle from vertical (0 = top-down, 45 = classic isometric)
+        tilt_rad = math.radians(isometric_angle)
+
+        # Position camera: move back and up to compensate for tilt
+        cam_height = 500
+        cam_offset = cam_height * math.tan(tilt_rad)
+
+        # Camera looks from south (positive Y offset means camera is south of center)
+        cam_obj.location = (
+            scene_width / 2,
+            scene_height / 2 - cam_offset,
+            cam_height
+        )
+        # Tilt camera to look at scene center
+        cam_obj.rotation_euler = (tilt_rad, 0, 0)
+
+        # Increase ortho scale to fit tilted view
+        cam_data.ortho_scale = scene_width * (1 + math.sin(tilt_rad) * 0.5)
+    else:
+        # Standard top-down view (for map tiles)
+        cam_obj.location = (scene_width / 2, scene_height / 2, 500)
+        cam_obj.rotation_euler = (0, 0, 0)
 
     bpy.context.collection.objects.link(cam_obj)
     scene.camera = cam_obj
@@ -732,6 +866,10 @@ def main():
         _render_color_mode(
             scene_data, config, style_data, elevation, width_m, height_m, output_path
         )
+    elif render_mode == "depth":
+        _render_depth_mode(
+            scene_data, config, elevation, width_m, height_m, output_path
+        )
     else:
         _render_shadow_mode(
             scene_data, config, elevation, width_m, height_m, output_path
@@ -818,6 +956,55 @@ def _render_shadow_mode(
     print("  Done!")
 
 
+def create_data_driven_material(
+    name: str,
+    color: tuple,
+    roughness: float = 0.8,
+    emission: float = 0.0,
+    emission_color: tuple = None,
+) -> object:
+    """Create material with optional emission (for night scenes, neon, etc.).
+
+    Args:
+        name: Material name
+        color: RGB tuple (0.0-1.0)
+        roughness: Surface roughness
+        emission: Emission strength (0=none, 1+=glowing)
+        emission_color: RGB tuple for emission (defaults to color)
+
+    Returns:
+        Blender material
+    """
+    if bpy is None:
+        return None
+
+    mat = bpy.data.materials.new(name=name)
+
+    if hasattr(mat, "use_nodes") and not mat.use_nodes:
+        mat.use_nodes = True
+
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+
+    # Principled BSDF
+    principled = nodes.new("ShaderNodeBsdfPrincipled")
+    principled.inputs["Base Color"].default_value = (*color, 1.0)
+    principled.inputs["Roughness"].default_value = roughness
+    principled.inputs["Specular IOR Level"].default_value = 0.3
+
+    # Add emission if specified
+    if emission > 0:
+        em_color = emission_color or color
+        principled.inputs["Emission Color"].default_value = (*em_color, 1.0)
+        principled.inputs["Emission Strength"].default_value = emission
+
+    output = nodes.new("ShaderNodeOutputMaterial")
+    links.new(principled.outputs["BSDF"], output.inputs["Surface"])
+
+    return mat
+
+
 def _render_color_mode(
     scene_data: dict,
     config: dict,
@@ -827,12 +1014,63 @@ def _render_color_mode(
     height_m: float,
     output_path: Path,
 ) -> None:
-    """Render full-color tile with styled materials."""
+    """Render full-color tile with styled materials.
+
+    Supports two modes:
+    1. Simple mode: All buildings/trees use same colors from style_data
+    2. Data-driven mode: Per-building types and per-tree species colors
+
+    Data-driven mode is activated when:
+    - style_data contains "use_building_types": true
+    - style_data contains "use_tree_species": true
+    - buildings have "type" field
+    - trees have "species" field
+    """
     print(f"  Style: {style_data.get('name', 'default')}")
+
+    # Check if data-driven mode
+    use_building_types = style_data.get("use_building_types", False)
+    use_tree_species = style_data.get("use_tree_species", False)
+    season = style_data.get("season", "summer")
+    llm_style = style_data.get("llm_style", {})  # LLM-generated parameters
+
+    if use_building_types or use_tree_species or llm_style:
+        print(f"  Data-driven mode: buildings={use_building_types}, trees={use_tree_species}, season={season}")
 
     # Create colored materials from style
     print("  Creating colored materials...")
     materials = setup_color_materials(style_data)
+
+    # If LLM style provided, override base colors
+    if llm_style:
+        print("  Applying LLM-generated style parameters...")
+        # Override materials with LLM colors
+        if llm_style.get("building_wall_color"):
+            materials["wall"] = create_data_driven_material(
+                "LLMWall",
+                tuple(llm_style["building_wall_color"]),
+                llm_style.get("building_roughness", 0.8),
+                llm_style.get("building_emission", 0.0),
+                tuple(llm_style["window_emission_color"]) if llm_style.get("window_emission_color") else None,
+            )
+        if llm_style.get("tree_foliage_color"):
+            materials["foliage"] = create_data_driven_material(
+                "LLMFoliage",
+                tuple(llm_style["tree_foliage_color"]),
+                0.95,
+            )
+        if llm_style.get("ground_color"):
+            materials["grass"] = create_data_driven_material(
+                "LLMGround",
+                tuple(llm_style["ground_color"]),
+                0.95,
+            )
+        if llm_style.get("terrain_color"):
+            materials["terrain"] = create_data_driven_material(
+                "LLMTerrain",
+                tuple(llm_style["terrain_color"]),
+                style_data.get("terrain_roughness", 0.95),
+            )
 
     # Create terrain mesh or ground plane
     if elevation is not None and elevation.size > 0:
@@ -846,10 +1084,13 @@ def _render_color_mode(
     # Always create ground plane for color mode (visible base)
     setup_ground_plane(width_m, height_m, materials.get("grass"))
 
-    # Create buildings with wall material
+    # Create buildings
     buildings = scene_data.get("buildings", [])
     print(f"  Creating {len(buildings)} buildings...")
-    wall_mat = materials.get("wall")
+
+    # Cache for building type materials (data-driven mode)
+    building_type_mats = {}
+
     for i, b in enumerate(buildings):
         building = create_building(
             b["footprint"],
@@ -857,17 +1098,53 @@ def _render_color_mode(
             b.get("elevation", 0),
             f"Building_{i}",
         )
-        if building and wall_mat:
-            if building.data.materials:
-                building.data.materials[0] = wall_mat
-            else:
-                building.data.materials.append(wall_mat)
+        if not building:
+            continue
 
-    # Create trees with foliage and trunk materials
+        # Determine material to use
+        if use_building_types and b.get("type"):
+            building_type = b["type"]
+            # Get or create material for this type
+            if building_type not in building_type_mats:
+                # Get colors from building type mapping
+                type_colors = style_data.get("building_type_colors", {}).get(building_type)
+                if type_colors:
+                    wall_color = tuple(type_colors.get("wall", [0.85, 0.82, 0.78]))
+                    roof_color = tuple(type_colors.get("roof", [0.45, 0.38, 0.32]))
+                    roughness = type_colors.get("roughness", 0.8)
+                else:
+                    # Fallback to default
+                    wall_color = tuple(style_data.get("building_wall", [0.85, 0.82, 0.78]))
+                    roof_color = tuple(style_data.get("building_roof", [0.45, 0.38, 0.32]))
+                    roughness = style_data.get("building_roughness", 0.8)
+
+                building_type_mats[building_type] = create_data_driven_material(
+                    f"Building_{building_type}",
+                    wall_color,
+                    roughness,
+                )
+
+            mat = building_type_mats[building_type]
+        else:
+            # Use default wall material
+            mat = materials.get("wall")
+
+        # Apply material
+        if mat:
+            if building.data.materials:
+                building.data.materials[0] = mat
+            else:
+                building.data.materials.append(mat)
+
+    # Create trees
     trees = scene_data.get("trees", [])
     print(f"  Creating {len(trees)} trees...")
-    foliage_mat = materials.get("foliage")
+
+    # Cache for tree species materials (data-driven mode)
+    tree_species_mats = {}
+    default_foliage_mat = materials.get("foliage")
     trunk_mat = materials.get("trunk")
+
     for i, t in enumerate(trees):
         crown, trunk = create_tree(
             t["position"],
@@ -875,6 +1152,35 @@ def _render_color_mode(
             t.get("crown_radius", 3),
             f"Tree_{i}",
         )
+
+        # Determine foliage material
+        if use_tree_species and t.get("species"):
+            species = t["species"]
+            # Get genus (first word)
+            genus = species.split()[0] if species else "default"
+            cache_key = f"{genus}_{season}"
+
+            if cache_key not in tree_species_mats:
+                # Get color from species mapping
+                species_colors = style_data.get("tree_species_colors", {})
+                season_colors = species_colors.get(genus, {})
+                foliage_color = season_colors.get(season)
+
+                if foliage_color:
+                    tree_species_mats[cache_key] = create_data_driven_material(
+                        f"Foliage_{cache_key}",
+                        tuple(foliage_color),
+                        0.95,
+                    )
+                else:
+                    # Use default
+                    tree_species_mats[cache_key] = default_foliage_mat
+
+            foliage_mat = tree_species_mats[cache_key]
+        else:
+            foliage_mat = default_foliage_mat
+
+        # Apply materials
         if crown and foliage_mat:
             crown.data.materials.append(foliage_mat)
         if trunk and trunk_mat:
@@ -907,6 +1213,112 @@ def _render_color_mode(
 
     # Render
     print(f"  Rendering to {output_path}...")
+    bpy.context.scene.render.filepath = str(output_path)
+    bpy.ops.render.render(write_still=True)
+
+    print("  Done!")
+
+
+def _render_depth_mode(
+    scene_data: dict,
+    config: dict,
+    elevation,
+    width_m: float,
+    height_m: float,
+    output_path: Path,
+) -> None:
+    """Render depth pass (Z-buffer) for ControlNet conditioning.
+
+    The depth pass provides geometric structure information that can be used
+    with Stable Diffusion ControlNet to generate stylized tiles while
+    preserving building positions, heights, and street layouts.
+    """
+    # Create terrain
+    if elevation is not None and elevation.size > 0:
+        print("  Creating terrain mesh...")
+        terrain = create_terrain_mesh(elevation, width_m, height_m)
+        # Apply simple gray material to terrain
+        if terrain and bpy is not None:
+            mat = bpy.data.materials.new(name="DepthTerrainMat")
+            if hasattr(mat, "use_nodes") and not mat.use_nodes:
+                mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+            nodes.clear()
+            diffuse = nodes.new("ShaderNodeBsdfDiffuse")
+            diffuse.inputs["Color"].default_value = (0.5, 0.5, 0.5, 1)
+            output = nodes.new("ShaderNodeOutputMaterial")
+            mat.node_tree.links.new(diffuse.outputs["BSDF"], output.inputs["Surface"])
+            terrain.data.materials.append(mat)
+    else:
+        print("  Using flat ground plane")
+        # Create a simple ground plane
+        if bpy is not None:
+            bpy.ops.mesh.primitive_plane_add(
+                size=max(width_m, height_m) + 100,
+                location=(width_m / 2, height_m / 2, 0),
+            )
+            ground = bpy.context.active_object
+            ground.name = "Ground"
+
+    # Create buildings with depth-neutral material (gray)
+    buildings = scene_data.get("buildings", [])
+    print(f"  Creating {len(buildings)} buildings...")
+
+    depth_mat = None
+    if bpy is not None:
+        depth_mat = bpy.data.materials.new(name="DepthBuildingMat")
+        if hasattr(depth_mat, "use_nodes") and not depth_mat.use_nodes:
+            depth_mat.use_nodes = True
+        nodes = depth_mat.node_tree.nodes
+        nodes.clear()
+        diffuse = nodes.new("ShaderNodeBsdfDiffuse")
+        diffuse.inputs["Color"].default_value = (0.7, 0.7, 0.7, 1)
+        output = nodes.new("ShaderNodeOutputMaterial")
+        depth_mat.node_tree.links.new(diffuse.outputs["BSDF"], output.inputs["Surface"])
+
+    for i, b in enumerate(buildings):
+        building = create_building(
+            b["footprint"],
+            b["height"],
+            b.get("elevation", 0),
+            f"Building_{i}",
+        )
+        if building and depth_mat:
+            if building.data.materials:
+                building.data.materials[0] = depth_mat
+            else:
+                building.data.materials.append(depth_mat)
+
+    # Create trees (simplified for depth)
+    trees = scene_data.get("trees", [])
+    print(f"  Creating {len(trees)} trees...")
+    for i, t in enumerate(trees):
+        crown, trunk = create_tree(
+            t["position"],
+            t["height"],
+            t.get("crown_radius", 3),
+            f"Tree_{i}",
+        )
+        if crown and depth_mat:
+            crown.data.materials.append(depth_mat)
+        if trunk and depth_mat:
+            trunk.data.materials.append(depth_mat)
+
+    # No sun needed for depth pass (we use Z-buffer, not shading)
+    # But we need some light to avoid completely black renders
+    if bpy is not None:
+        light_data = bpy.data.lights.new(name="DepthLight", type="SUN")
+        light_data.energy = 1.0
+        light_obj = bpy.data.objects.new("DepthLight", light_data)
+        light_obj.rotation_euler = (0, 0, 0)  # Straight down
+        bpy.context.collection.objects.link(light_obj)
+
+    # Setup depth render
+    print("  Configuring renderer (depth mode)...")
+    setup_depth_render(config, width_m, height_m)
+
+    # Render
+    print(f"  Rendering depth pass to {output_path}...")
     bpy.context.scene.render.filepath = str(output_path)
     bpy.ops.render.render(write_still=True)
 

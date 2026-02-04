@@ -15,10 +15,14 @@ import type { StylesManifest, StylesViewerProps } from './types';
 const ZURICH_CENTER: [number, number] = [8.5417, 47.3769];
 const DEFAULT_ZOOM = 16; // Match AI tile zoom level
 
-// All possible style names for cleanup (both ai-* and sd-* prefixes)
+// All possible style names for cleanup (ai-*, sd-*, and hybrid-* prefixes)
 const ALL_STYLES = [
   'ai-winter', 'ai-cyberpunk', 'ai-watercolor', 'ai-autumn', 'ai-blueprint', 'ai-retro',
   'sd-winter', 'sd-cyberpunk', 'sd-watercolor', 'sd-autumn', 'sd-blueprint', 'sd-retro',
+  // Hybrid Blender-rendered styles (data-driven)
+  'hybrid-autumn', 'hybrid-winter', 'hybrid-spring', 'hybrid-summer',
+  'hybrid-golden_hour', 'hybrid-night', 'hybrid-cyberpunk',
+  'hybrid-isometric', 'hybrid-isometric_golden',
   'satellite',
   // Legacy names for cleanup
   'winter', 'cyberpunk', 'watercolor', 'autumn', 'blueprint', 'retro',

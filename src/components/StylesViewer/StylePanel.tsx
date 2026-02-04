@@ -24,6 +24,9 @@ function getGeneratorBadge(generator: GeneratorType | undefined): { label: strin
   if (generator === 'controlnet') {
     return { label: 'SD', className: 'generator-badge controlnet' };
   }
+  if (generator === 'blender-hybrid') {
+    return { label: 'Blender', className: 'generator-badge blender' };
+  }
   return { label: 'Gemini', className: 'generator-badge gemini' };
 }
 

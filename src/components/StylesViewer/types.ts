@@ -5,7 +5,7 @@
  */
 
 /** Generator type for AI tiles */
-export type GeneratorType = 'gemini' | 'controlnet';
+export type GeneratorType = 'gemini' | 'controlnet' | 'blender-hybrid';
 
 /** Metadata for a single AI-generated tile style */
 export interface StyleInfo {
@@ -18,7 +18,7 @@ export interface StyleInfo {
   bounds: [number, number, number, number]; // [west, south, east, north]
   zoom: number;
   generatedAt: string | null;
-  /** Generator used: "gemini" for ai-*, "controlnet" for sd-* */
+  /** Generator used: "gemini" for ai-*, "controlnet" for sd-*, "blender-hybrid" for hybrid-* */
   generator: GeneratorType;
 }
 

@@ -216,6 +216,9 @@ class BlenderTileRenderer:
                         "footprint": footprint,
                         "height": height,
                         "elevation": base_z,
+                        # Data-driven: include building type for per-type materials
+                        "type": feature.properties.get("art", "default"),
+                        "id": feature.id,
                     }
                 )
 
@@ -237,6 +240,10 @@ class BlenderTileRenderer:
                     "position": [x, y, base_z],
                     "height": height,
                     "crown_radius": crown_diam / 2,
+                    # Data-driven: include species for per-species colors
+                    "species": feature.properties.get("baumgattunglat", "")
+                              or feature.properties.get("species", ""),
+                    "id": feature.id,
                 }
             )
 
@@ -409,3 +416,154 @@ def render_blender_tile(
     style = get_style(style_name)
 
     return renderer.render(buildings, trees, elevation, bounds, sun, style)
+
+
+def render_styled_tile(
+    buildings: List[Feature],
+    trees: List[Feature],
+    elevation: Optional[NDArray[np.float32]],
+    bounds: Tuple[float, float, float, float],
+    style_preset: str = "default",
+    llm_style: Optional[dict] = None,
+    image_size: int = 512,
+    samples: int = 64,
+    use_gpu: bool = True,
+) -> NDArray[np.uint8]:
+    """Render a tile with data-driven materials and optional LLM style.
+
+    This is the main entry point for hybrid styled rendering that combines:
+    - Data-driven per-building materials (based on building type)
+    - Data-driven per-tree colors (based on species and season)
+    - LLM-generated creative style parameters
+
+    Args:
+        buildings: Building features (with type from 'art' property)
+        trees: Tree features (with species from 'baumgattunglat' property)
+        elevation: Elevation array (optional)
+        bounds: (west, south, east, north) in WGS84
+        style_preset: Style preset name (spring, summer, autumn, winter, cyberpunk, etc.)
+        llm_style: Optional LLM-generated style dict (from llm_variation.py or vision_blender.py)
+        image_size: Output resolution
+        samples: Render samples (higher=better quality)
+        use_gpu: Use GPU rendering if available
+
+    Returns:
+        RGB image array (size, size, 3)
+
+    Example:
+        # Simple seasonal rendering
+        image = render_styled_tile(
+            buildings, trees, elevation,
+            bounds=(8.53, 47.37, 8.55, 47.39),
+            style_preset="autumn",
+        )
+
+        # With LLM-generated style
+        from .llm_variation import generate_llm_style
+        llm_params = generate_llm_style("cyberpunk rain night")
+        image = render_styled_tile(
+            buildings, trees, elevation,
+            bounds=(8.53, 47.37, 8.55, 47.39),
+            style_preset="night",
+            llm_style=llm_params.to_dict(),
+        )
+    """
+    from .style_presets import get_style_preset
+    from .materials import (
+        get_building_material,
+        get_tree_color,
+        BUILDING_TYPE_MATERIALS,
+        TREE_SPECIES_COLORS,
+    )
+
+    # Get style preset
+    preset = get_style_preset(style_preset)
+
+    # Build enhanced style dict for Blender
+    style_dict = {
+        "name": preset.name,
+        "description": preset.description,
+        # Base colors (fallback)
+        "building_wall": [0.85, 0.82, 0.78],
+        "building_roof": [0.45, 0.38, 0.32],
+        "building_roughness": 0.8,
+        "tree_foliage": [0.28, 0.48, 0.22],
+        "tree_trunk": [0.35, 0.25, 0.18],
+        "grass": [0.35, 0.50, 0.25],
+        "street": [0.35, 0.35, 0.38],
+        "sidewalk": [0.70, 0.68, 0.65],
+        "water": [0.20, 0.35, 0.50],
+        "terrain": [0.45, 0.42, 0.38],
+        "terrain_roughness": 0.95,
+        # Lighting
+        "sun_strength": preset.sun_strength,
+        "sun_color": [1.0, 0.98, 0.95],
+        "ambient_strength": preset.ambient_strength,
+        "sky_color": list(preset.sky_color),
+        "default_samples": samples,
+        # Data-driven flags
+        "use_building_types": preset.use_building_types,
+        "use_tree_species": preset.use_tree_species,
+        "season": preset.season,
+        # Style effects
+        "snow_coverage": preset.snow_coverage,
+        "rain_wetness": preset.rain_wetness,
+        "fog_density": preset.fog_density,
+        "saturation": preset.saturation,
+        "contrast": preset.contrast,
+        "temperature_shift": preset.temperature_shift,
+        "brightness": preset.brightness,
+        # Isometric view for 3D depth (shows building facades)
+        "isometric": "isometric" in style_preset.lower(),
+        "isometric_angle": 25,  # degrees from vertical
+    }
+
+    # Add building type materials
+    if preset.use_building_types:
+        building_type_colors = {}
+        for type_name, mat in BUILDING_TYPE_MATERIALS.items():
+            building_type_colors[type_name] = {
+                "wall": list(mat.wall),
+                "roof": list(mat.roof),
+                "roughness": mat.wall_roughness,
+            }
+        style_dict["building_type_colors"] = building_type_colors
+
+    # Add tree species colors
+    if preset.use_tree_species:
+        style_dict["tree_species_colors"] = {
+            genus: {season: list(colors) for season, colors in season_colors.items()}
+            for genus, season_colors in TREE_SPECIES_COLORS.items()
+        }
+
+    # Add LLM style if provided
+    if llm_style:
+        style_dict["llm_style"] = llm_style
+        # LLM can override sun position
+        if llm_style.get("sun_azimuth") is not None:
+            style_dict["_sun_azimuth"] = llm_style["sun_azimuth"]
+        if llm_style.get("sun_altitude") is not None:
+            style_dict["_sun_altitude"] = llm_style["sun_altitude"]
+
+    # Determine sun position
+    sun_azimuth = style_dict.get("_sun_azimuth", preset.sun_azimuth or 225)
+    sun_altitude = style_dict.get("_sun_altitude", preset.sun_altitude or 35)
+
+    # Create render config
+    config = ColorRenderConfig(
+        image_size=image_size,
+        samples=samples,
+        use_gpu=use_gpu,
+    )
+
+    # Create style object (for compatibility)
+    class DictStyle:
+        def __init__(self, d):
+            self._dict = d
+        def to_dict(self):
+            return self._dict
+
+    renderer = BlenderTileRenderer(config=config)
+    sun = SunPosition(azimuth=sun_azimuth, altitude=sun_altitude)
+
+    return renderer.render(buildings, trees, elevation, bounds, sun, DictStyle(style_dict))
