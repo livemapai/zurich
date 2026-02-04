@@ -76,6 +76,12 @@ export interface MapTileLayerConfig {
   opacity?: number;
   /** Base elevation for tile rendering (default: ZURICH_BASE_ELEVATION = 408m) */
   baseElevation?: number;
+  /**
+   * Use flat 2D bounds format [west, south, east, north] instead of 4-corner 3D format.
+   * Set to true for MapView with flat transit/overlay data.
+   * Default: false (uses 4-corner format with elevation for FirstPersonView)
+   */
+  flatBounds?: boolean;
   /** Maximum number of tiles to cache (default: 100) */
   maxCacheSize?: number;
   /** Maximum cache size in bytes (default: 100MB) */
@@ -91,6 +97,7 @@ const DEFAULT_CONFIG: Required<MapTileLayerConfig> = {
   maxZoom: 19,
   opacity: 1,
   baseElevation: ZURICH_BASE_ELEVATION,
+  flatBounds: false,
   maxCacheSize: 100,
   maxCacheByteSize: 100 * 1024 * 1024, // 100MB
   debounceTime: 50,
@@ -125,19 +132,26 @@ export function createMapTileLayer(config: MapTileLayerConfig = {}): TileLayer {
     renderSubLayers: (props) => {
       const { boundingBox } = props.tile;
       const [min, max] = boundingBox;
-      const elevation = mergedConfig.baseElevation;
 
-      // Use 4-corner bounds format to specify elevation
-      // This ensures tiles render at ground level (408m) instead of sea level (0m)
+      // Use flat 2D bounds for MapView (transit overlays, etc.)
+      // Use 4-corner 3D bounds for FirstPersonView (terrain elevation)
+      if (mergedConfig.flatBounds) {
+        return new BitmapLayer(props, {
+          data: undefined,
+          image: props.data,
+          bounds: [min[0], min[1], max[0], max[1]] as [number, number, number, number],
+        });
+      }
+
       return new BitmapLayer(props, {
         data: undefined,
         image: props.data,
         bounds: [
-          [min[0] as number, min[1] as number, elevation], // SW corner
-          [min[0] as number, max[1] as number, elevation], // NW corner
-          [max[0] as number, max[1] as number, elevation], // NE corner
-          [max[0] as number, min[1] as number, elevation], // SE corner
-        ],
+          [min[0] as number, min[1] as number, mergedConfig.baseElevation],
+          [min[0] as number, max[1] as number, mergedConfig.baseElevation],
+          [max[0] as number, max[1] as number, mergedConfig.baseElevation],
+          [max[0] as number, min[1] as number, mergedConfig.baseElevation],
+        ] as [[number, number, number], [number, number, number], [number, number, number], [number, number, number]],
       });
     },
   });

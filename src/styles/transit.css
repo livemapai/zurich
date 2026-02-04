@@ -1,0 +1,522 @@
+/**
+ * Transit Viewer Styles
+ *
+ * Dark theme with cyan accents, inspired by deck.gl trips example.
+ * Uses backdrop blur for frosted glass effect.
+ */
+
+/* ============================================
+   Page & Container Styles
+   ============================================ */
+
+.transit-page {
+  position: absolute;
+  inset: 0;
+  background: #0a0a0f;
+}
+
+.transit-viewer {
+  position: absolute;
+  inset: 0;
+  background: #0a0a0f;
+}
+
+/* ============================================
+   Loading Overlay
+   ============================================ */
+
+.transit-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #0a0a0f;
+  z-index: 100;
+}
+
+.transit-loading-text {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.transit-loading-progress {
+  width: 200px;
+  height: 4px;
+  background-color: #1a1a2e;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.transit-loading-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff 0%, #00a1cc 100%);
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   Time Controls (Bottom Center)
+   ============================================ */
+
+.transit-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 10, 15, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 100;
+}
+
+/* Play/Pause Button */
+.transit-play-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00d4ff 0%, #0088cc 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: transform 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+
+.transit-play-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+}
+
+.transit-play-btn:active {
+  transform: scale(0.98);
+}
+
+/* Time Display */
+.transit-time-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.transit-time-value {
+  font-family: monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: #00d4ff;
+  letter-spacing: 0.5px;
+}
+
+/* Time Slider */
+.transit-slider-container {
+  flex: 1;
+  min-width: 150px;
+  max-width: 250px;
+}
+
+.transit-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #1a1a2e;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.transit-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #00d4ff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.transit-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.transit-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #00d4ff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Speed Selector */
+.transit-speed-select {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ccc;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.transit-speed-select:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: white;
+}
+
+.transit-speed-select option {
+  background: #0a0a0f;
+  color: white;
+}
+
+/* Trip Count Badge */
+.transit-trip-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 8px;
+}
+
+.transit-trip-count {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: #00d4ff;
+}
+
+.transit-trip-label {
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   Route Filter Panel (Top Right)
+   ============================================ */
+
+.transit-route-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: rgba(10, 10, 15, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 260px;
+  max-width: 300px;
+  z-index: 100;
+}
+
+.transit-route-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transit-route-panel-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: white;
+}
+
+.transit-route-panel-close {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.transit-route-panel-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Route Actions */
+.transit-route-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.transit-route-stats {
+  font-size: 12px;
+  color: #888;
+}
+
+.transit-route-action-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.transit-route-action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ccc;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.transit-route-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Route Groups */
+.transit-route-groups {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.transit-route-group {
+  margin-bottom: 8px;
+}
+
+/* Type Header */
+.transit-route-type-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: color 0.15s;
+  border-radius: 4px;
+}
+
+.transit-route-type-header:hover {
+  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.transit-route-type-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+  width: 12px;
+  color: #666;
+}
+
+.transit-route-type-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.transit-route-type-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.transit-route-type-count {
+  font-size: 11px;
+  color: #666;
+  font-family: monospace;
+}
+
+.transit-route-type-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.transit-route-type-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #666;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.transit-route-type-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.transit-route-type-btn.active {
+  background: rgba(0, 212, 255, 0.2);
+  border-color: #00d4ff;
+  color: #00d4ff;
+}
+
+/* Route Chips */
+.transit-route-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 4px 8px 20px;
+}
+
+.transit-route-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.transit-route-chip:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.transit-route-chip.hidden {
+  opacity: 0.4;
+  background: transparent;
+}
+
+.transit-route-chip.visible {
+  border-color: var(--route-color, #00d4ff);
+  background: rgba(0, 212, 255, 0.15);
+}
+
+.transit-route-chip-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Filter Toggle Button
+   ============================================ */
+
+.transit-filter-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(10, 10, 15, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+  z-index: 99;
+}
+
+.transit-filter-toggle:hover {
+  background: rgba(10, 10, 15, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.transit-filter-icon {
+  font-size: 14px;
+}
+
+.transit-filter-label {
+  font-weight: 500;
+}
+
+/* Hide toggle when panel is open */
+.transit-route-panel ~ .transit-filter-toggle {
+  display: none;
+}
+
+/* ============================================
+   Keyboard Hints
+   ============================================ */
+
+.transit-hints {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: #666;
+  z-index: 50;
+}
+
+.transit-hints span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.transit-hints kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 10px;
+  color: #888;
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+
+.transit-route-panel::-webkit-scrollbar,
+.transit-route-groups::-webkit-scrollbar {
+  width: 6px;
+}
+
+.transit-route-panel::-webkit-scrollbar-track,
+.transit-route-groups::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.transit-route-panel::-webkit-scrollbar-thumb,
+.transit-route-groups::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.transit-route-panel::-webkit-scrollbar-thumb:hover,
+.transit-route-groups::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

@@ -51,6 +51,7 @@ import {
 	TEXTURE_PROVIDERS,
 	MAP_TILE_PROVIDERS,
 	SWISS_ZOOM_THRESHOLD,
+	PHOTOREALISTIC_MIN_ZOOM,
 	type TextureProviderId,
 	type MapTileProviderId,
 } from "@/layers";
@@ -165,8 +166,9 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 		);
 	}, [viewState.position[2], viewState.fov]);
 
-	// Resolve texture URL with hybrid logic for swissimage
-	// Falls back to Esri at low zoom because swisstopo only covers Switzerland
+	// Resolve texture URL with hybrid logic for special providers
+	// - swissimage: Falls back to Esri at low zoom (swisstopo only covers Switzerland)
+	// - photorealistic: Falls back to OSM below zoom 14 (local tiles only at 14-17)
 	const resolvedTextureUrl = useMemo(() => {
 		if (
 			terrainTexture === "swissimage" &&
@@ -174,6 +176,13 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 		) {
 			// Use Esri satellite for wide views (swisstopo returns 400 outside Swiss bounds)
 			return TEXTURE_PROVIDERS.satellite.url;
+		}
+		if (
+			terrainTexture === "photorealistic" &&
+			effectiveZoom < PHOTOREALISTIC_MIN_ZOOM
+		) {
+			// Fall back to OSM for wider views (local tiles only generated at zoom 14-17)
+			return TEXTURE_PROVIDERS.osm.url;
 		}
 		return TEXTURE_PROVIDERS[terrainTexture].url;
 	}, [terrainTexture, effectiveZoom]);

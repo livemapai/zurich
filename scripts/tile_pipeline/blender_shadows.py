@@ -86,7 +86,15 @@ class BlenderConfig:
 
 @dataclass
 class SceneBounds:
-    """Geographic bounds for coordinate conversion."""
+    """Geographic bounds with equirectangular coordinate conversion.
+
+    Uses equirectangular projection (local meters) because deck.gl linearly
+    interpolates tile textures over WGS84 bounds. This ensures buildings
+    in rendered tiles align with deck.gl's 3D geometry.
+
+    Note: Web Mercator was tried but caused buildings to appear ~68% smaller
+    because the 611m Mercator scene was stretched over 414m equivalent bounds.
+    """
 
     west: float
     south: float
@@ -103,13 +111,17 @@ class SceneBounds:
         import math
 
         self.lat_center = (self.south + self.north) / 2
+
+        # Equirectangular: meters per degree at this latitude
         self.meters_per_deg_y = 111320.0
         self.meters_per_deg_x = 111320.0 * math.cos(math.radians(self.lat_center))
+
+        # Scene dimensions in local meters
         self.width_meters = (self.east - self.west) * self.meters_per_deg_x
         self.height_meters = (self.north - self.south) * self.meters_per_deg_y
 
     def wgs84_to_local(self, lon: float, lat: float) -> Tuple[float, float]:
-        """Convert WGS84 to local meters from SW corner."""
+        """Convert WGS84 to local scene coordinates (meters from SW corner)."""
         x = (lon - self.west) * self.meters_per_deg_x
         y = (lat - self.south) * self.meters_per_deg_y
         return (x, y)

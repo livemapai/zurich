@@ -570,9 +570,12 @@ def setup_color_render(
     # Setup orthographic camera (top-down)
     cam_data = bpy.data.cameras.new("Camera")
     cam_data.type = "ORTHO"
-    cam_data.ortho_scale = max(scene_width, scene_height) * 1.1
+    # Scene is now square in Web Mercator, so width ≈ height
+    # Use scene_width directly (no need for max() with square scenes)
+    cam_data.ortho_scale = scene_width
 
     cam_obj = bpy.data.objects.new("Camera", cam_data)
+    # Position camera centered over scene
     cam_obj.location = (scene_width / 2, scene_height / 2, 500)
     cam_obj.rotation_euler = (0, 0, 0)
 
@@ -637,13 +640,11 @@ def setup_render(config: dict, scene_width: float, scene_height: float) -> None:
     # Setup orthographic camera (top-down)
     cam_data = bpy.data.cameras.new("Camera")
     cam_data.type = "ORTHO"
-
-    # Set ortho scale to cover the scene
-    cam_data.ortho_scale = max(scene_width, scene_height) * 1.1
+    # Scene is now square in Web Mercator, so width ≈ height
+    cam_data.ortho_scale = scene_width
 
     cam_obj = bpy.data.objects.new("Camera", cam_data)
-
-    # Position camera above scene center, looking down
+    # Position camera centered over scene
     cam_obj.location = (scene_width / 2, scene_height / 2, 500)
     cam_obj.rotation_euler = (0, 0, 0)  # Looking straight down
 

@@ -42,6 +42,12 @@ export interface TramTripsLayerConfig {
 	pickable?: boolean;
 	/** Set of visible route short names (undefined = show all routes) */
 	visibleRoutes?: Set<string>;
+	/**
+	 * Flatten paths to 2D (strip z-coordinates).
+	 * Use true for MapView with flat basemap, false for FirstPersonView with terrain.
+	 * Default: false
+	 */
+	flatPaths?: boolean;
 }
 
 /** Default configuration values */
@@ -58,6 +64,7 @@ const DEFAULT_CONFIG: Required<
 	visible: true,
 	pickable: false,
 	visibleRoutes: undefined,
+	flatPaths: false,
 };
 
 /**
@@ -143,7 +150,10 @@ export function createTramTripsLayer(
 		id: cfg.id,
 		data: filteredData,
 		visible: cfg.visible,
-		getPath: (d) => d.path,
+		// Strip z-coordinates for flat MapView, keep 3D for FirstPersonView
+		getPath: cfg.flatPaths
+			? (d) => d.path.map((p) => [p[0], p[1]] as [number, number])
+			: (d) => d.path,
 		getTimestamps: (d) => d.timestamps,
 		getColor: (d) => hexToRgba(d.route_color, cfg.opacity),
 		currentTime: cfg.currentTime,

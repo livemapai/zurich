@@ -57,6 +57,10 @@ export const TEXTURE_PROVIDERS = {
     name: 'Dark No Labels (Carto)',
     url: 'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
   },
+  photorealistic: {
+    name: 'Rendered 3D (Local)',
+    url: '/tiles/photorealistic/{z}/{x}/{y}.webp',
+  },
 } as const;
 
 /**
@@ -71,6 +75,18 @@ export const TEXTURE_PROVIDERS = {
  * - 16: ~25m eye height - building detail
  */
 export const SWISS_ZOOM_THRESHOLD = 12;
+
+/**
+ * Minimum zoom level for local photorealistic tiles
+ *
+ * Local Blender-rendered tiles are only generated at zoom 14-17.
+ * Below zoom 14, fall back to OSM for broader coverage.
+ *
+ * This threshold balances tile availability with rendering detail:
+ * - 14: Street-level detail begins
+ * - 16-17: Maximum detail for city center tiles
+ */
+export const PHOTOREALISTIC_MIN_ZOOM = 14;
 
 /** Type-safe texture provider IDs */
 export type TextureProviderId = keyof typeof TEXTURE_PROVIDERS;

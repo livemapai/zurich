@@ -24,6 +24,7 @@ export {
 	createMapTileLayer,
 	OSM_TILE_URL,
 	STADIA_TILE_URL,
+	CARTO_DARK_URL,
 	MAP_TILE_PROVIDERS,
 	type MapTileLayerConfig,
 	type MapTileProviderId,
@@ -62,6 +63,7 @@ export {
 	createMapterhornTerrainLayer,
 	TEXTURE_PROVIDERS,
 	SWISS_ZOOM_THRESHOLD,
+	PHOTOREALISTIC_MIN_ZOOM,
 	type MapterhornTerrainLayerConfig,
 	type TextureProviderId,
 } from "./MapterhornTerrainLayer";

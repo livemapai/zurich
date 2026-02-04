@@ -177,9 +177,40 @@ pnpm test:watch    # Tests in watch mode
 | Import errors | Check `@/` aliases in tsconfig.json |
 | Collision not working | Verify buildings loaded in debug panel |
 
+## Spatial Query CLI
+
+Query buildings, amenities, and shadows via the tile pipeline CLI:
+
+```bash
+# Route-building queries
+python -m scripts.tile_pipeline.cli route-buildings --route 11
+python -m scripts.tile_pipeline.cli route-buildings --list --type tram --sort-by benches
+python -m scripts.tile_pipeline.cli route-stats
+python -m scripts.tile_pipeline.cli compare-routes 4 11 15
+
+# Shadow queries
+python -m scripts.tile_pipeline.cli shadow --lat 47.376 --lng 8.54 --time 14:00
+python -m scripts.tile_pipeline.cli balcony --lat 47.376 --lng 8.54 --floor 5
+
+# Amenity queries
+python -m scripts.tile_pipeline.cli nearest --lat 47.376 --lng 8.54 --type bench
+python -m scripts.tile_pipeline.cli find --lat 47.376 --lng 8.54 --type fountain --radius 200
+```
+
+### Rebuilding the Spatial Index
+
+If transit or building data changes, rebuild the index:
+
+```bash
+python -m scripts.preprocess.build_route_building_index -v
+```
+
 ## Data Sources
 
 | Data | Source | License |
 |------|--------|---------|
 | Buildings | data.stadt-zuerich.ch | CC0 |
 | Terrain | swisstopo swissALTI3D | Open |
+| Transit (GTFS) | opentransportdata.swiss | Open |
+| Benches, Fountains, Toilets | data.stadt-zuerich.ch | CC0 |
+| Trees | data.stadt-zuerich.ch | CC0 |

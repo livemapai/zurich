@@ -390,6 +390,425 @@ def cmd_info(args: argparse.Namespace) -> int:
     return 0
 
 
+# =============================================================================
+# SPATIAL QUERY COMMANDS
+# =============================================================================
+
+
+def cmd_shadow(args: argparse.Namespace) -> int:
+    """Query shadow at a 3D point."""
+    from datetime import datetime, timezone
+    from .query import get_shadow_at
+    import json as json_module
+
+    # Parse time
+    try:
+        time = datetime.strptime(f"{args.date} {args.time}", "%Y-%m-%d %H:%M")
+        # Add UTC timezone for pysolar
+        time = time.replace(tzinfo=timezone.utc)
+    except ValueError as e:
+        print(f"Error parsing date/time: {e}", file=sys.stderr)
+        return 1
+
+    # Calculate height from floor if specified
+    height = args.height
+    if args.floor is not None:
+        height = (args.floor * 3.0) + 1.5  # 3m per floor + 1.5m standing
+
+    try:
+        result = get_shadow_at(args.lat, args.lng, time, height=height)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+    if args.json:
+        print(json_module.dumps(result.to_dict(), indent=2))
+    else:
+        pct = int(result.shadow * 100)
+        status = "shaded" if pct > 50 else "sunny"
+        height_desc = f"floor {args.floor}" if args.floor is not None else f"{height}m"
+        print(f"📍 ({result.latitude:.5f}, {result.longitude:.5f}) at {height_desc}")
+        print(f"🕐 {result.time.strftime('%Y-%m-%d %H:%M')}")
+        if result.source == "night":
+            print(f"🌙 Sun below horizon (night)")
+        else:
+            icon = "🌥️" if pct > 50 else "☀️"
+            print(f"{icon} Shadow: {pct}% ({status})")
+
+    return 0
+
+
+def cmd_balcony(args: argparse.Namespace) -> int:
+    """Analyze sun exposure for a balcony throughout the day."""
+    from datetime import datetime, timezone
+    from .query import get_balcony_sun_exposure
+    import json as json_module
+
+    try:
+        date = datetime.strptime(args.date, "%Y-%m-%d")
+        date = date.replace(tzinfo=timezone.utc)
+    except ValueError as e:
+        print(f"Error parsing date: {e}", file=sys.stderr)
+        return 1
+
+    try:
+        result = get_balcony_sun_exposure(args.lat, args.lng, args.floor, date)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+    if args.json:
+        print(json_module.dumps(result, indent=2))
+    else:
+        print(f"🏠 Balcony sun analysis")
+        print(f"📍 ({args.lat:.5f}, {args.lng:.5f})")
+        print(f"🏢 Floor {args.floor} ({result['balcony_height_m']:.1f}m above ground)")
+        print(f"📅 {args.date}")
+        print()
+        print(f"☀️ Total sun: {result['total_sun_hours']:.1f} hours")
+        if result['best_time']:
+            print(f"✨ Best time: {result['best_time']}")
+        print()
+        if result['sunny_periods']:
+            print("Sunny periods:")
+            for start, end in result['sunny_periods']:
+                print(f"  ☀️ {start} - {end}")
+        else:
+            print("⛅ No direct sun on this day")
+        print()
+        print("Timeline:")
+        for point in result['timeline']:
+            # Create visual bar
+            sun_level = 1 - point['shadow']
+            bar_filled = int(sun_level * 20)
+            bar_empty = 20 - bar_filled
+            bar = "█" * bar_filled + "░" * bar_empty
+            icon = "☀️" if point['shadow'] < 0.5 else "🌥️"
+            print(f"  {point['time']} {bar} {icon}")
+
+    return 0
+
+
+def cmd_shadow_timeline(args: argparse.Namespace) -> int:
+    """Query shadow timeline for a point."""
+    from datetime import datetime, timezone
+    from .query import get_shadow_timeline
+    import json as json_module
+
+    try:
+        date = datetime.strptime(args.date, "%Y-%m-%d")
+        date = date.replace(tzinfo=timezone.utc)
+    except ValueError as e:
+        print(f"Error parsing date: {e}", file=sys.stderr)
+        return 1
+
+    # Calculate height from floor if specified
+    height = args.height
+    if args.floor is not None:
+        height = (args.floor * 3.0) + 1.5
+
+    try:
+        results = get_shadow_timeline(args.lat, args.lng, date, height=height)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+    if args.json:
+        print(json_module.dumps([r.to_dict() for r in results], indent=2))
+    else:
+        height_desc = f"floor {args.floor}" if args.floor is not None else f"{height}m"
+        print(f"📍 Shadow timeline for ({args.lat:.5f}, {args.lng:.5f}) at {height_desc}")
+        print(f"📅 {args.date}")
+        print()
+
+        # Calculate sun hours
+        sunny_count = sum(1 for r in results if r.shadow < 0.5)
+        total_sun_hours = sunny_count  # 1-hour intervals by default
+        print(f"☀️ Total sun: ~{total_sun_hours} hours")
+        print()
+
+        for r in results:
+            # Create visual bar (inverted: sun level)
+            sun_level = 1 - r.shadow
+            bar_filled = int(sun_level * 20)
+            bar_empty = 20 - bar_filled
+            bar = "█" * bar_filled + "░" * bar_empty
+
+            pct = int(r.shadow * 100)
+            if r.source == "night":
+                status = "🌙"
+            elif pct > 50:
+                status = "🌥️"
+            else:
+                status = "☀️"
+
+            print(f"  {r.time.strftime('%H:%M')} {bar} {pct:3d}% {status}")
+
+    return 0
+
+
+def cmd_nearest(args: argparse.Namespace) -> int:
+    """Find nearest amenity."""
+    from .query import find_nearest_amenity
+    import json as json_module
+
+    try:
+        result = find_nearest_amenity(args.lat, args.lng, args.type)
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    if result is None:
+        print(f"No {args.type} found within 500m")
+        return 1
+
+    if args.json:
+        print(json_module.dumps(result.to_dict(), indent=2))
+    else:
+        icon = {'bench': '🪑', 'fountain': '⛲', 'toilet': '🚻'}.get(args.type, '📍')
+        print(f"{icon} Nearest {args.type}:")
+        print(f"   Location: ({result.latitude:.5f}, {result.longitude:.5f})")
+        print(f"   Distance: {result.distance_m}m")
+        if result.properties:
+            for key, value in result.properties.items():
+                if value and key not in ('id', 'ogc_fid'):
+                    print(f"   {key}: {value}")
+
+    return 0
+
+
+def cmd_find_amenities(args: argparse.Namespace) -> int:
+    """Find amenities within radius."""
+    from .query import find_amenities_within
+    import json as json_module
+
+    try:
+        results = find_amenities_within(
+            args.lat, args.lng, args.type,
+            radius_m=args.radius,
+            limit=args.limit
+        )
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    if not results:
+        print(f"No {args.type} found within {args.radius}m")
+        return 1
+
+    if args.json:
+        print(json_module.dumps([r.to_dict() for r in results], indent=2))
+    else:
+        icon = {'bench': '🪑', 'fountain': '⛲', 'toilet': '🚻'}.get(args.type, '📍')
+        print(f"{icon} Found {len(results)} {args.type}(s) within {args.radius}m:")
+        print()
+        for i, result in enumerate(results, 1):
+            print(f"  {i}. {result.distance_m}m away")
+            print(f"     ({result.latitude:.5f}, {result.longitude:.5f})")
+
+    return 0
+
+
+# =============================================================================
+# ROUTE-BUILDING QUERY COMMANDS
+# =============================================================================
+
+
+def cmd_route_buildings(args: argparse.Namespace) -> int:
+    """Query buildings along a transit route."""
+    from .query import get_buildings_along_route, list_routes
+    import json as json_module
+
+    if args.list:
+        # List all routes
+        routes = list_routes(route_type=args.type)
+
+        # Sort by specified feature
+        sort_key = args.sort_by or "buildings"
+        sort_map = {
+            "buildings": lambda r: r.building_count,
+            "benches": lambda r: r.bench_count,
+            "fountains": lambda r: r.fountain_count,
+            "toilets": lambda r: r.toilet_count,
+            "trees": lambda r: r.tree_count,
+            "length": lambda r: r.path_length_km,
+        }
+        if sort_key in sort_map:
+            routes.sort(key=sort_map[sort_key], reverse=True)
+
+        if args.json:
+            print(json_module.dumps([r.to_dict() for r in routes], indent=2))
+        else:
+            sort_label = sort_key.replace("_", " ")
+            print(f"Transit routes sorted by {sort_label} ({len(routes)} total):\n")
+
+            # Group by type
+            by_type = {}
+            for r in routes:
+                if r.route_type not in by_type:
+                    by_type[r.route_type] = []
+                by_type[r.route_type].append(r)
+
+            for rtype, rlist in sorted(by_type.items()):
+                # Re-sort each group
+                rlist.sort(key=sort_map.get(sort_key, lambda r: r.building_count), reverse=True)
+                print(f"  {rtype.upper()} ({len(rlist)} routes):")
+                for r in rlist[:args.limit]:
+                    print(f"    {r.route_name:6s}  "
+                          f"{r.building_count:5d} 🏠  "
+                          f"{r.bench_count:3d} 🪑  "
+                          f"{r.fountain_count:2d} ⛲  "
+                          f"{r.toilet_count:2d} 🚻  "
+                          f"{r.path_length_km:5.1f} km")
+                if len(rlist) > args.limit:
+                    print(f"    ... and {len(rlist) - args.limit} more")
+                print()
+
+        return 0
+
+    # Query specific route
+    if not args.route:
+        print("Error: --route or --list required", file=sys.stderr)
+        return 1
+
+    result = get_buildings_along_route(
+        args.route,
+        include_building_ids=args.include_ids,
+    )
+
+    if result is None:
+        print(f"Route not found: {args.route}", file=sys.stderr)
+        # List similar routes
+        routes = list_routes()
+        similar = [r for r in routes if args.route.lower() in r.route_name.lower()]
+        if similar:
+            print(f"Did you mean: {', '.join(r.route_name for r in similar[:5])}")
+        return 1
+
+    if args.json:
+        print(json_module.dumps(result.to_dict(), indent=2))
+    else:
+        icon = {"tram": "🚋", "bus": "🚌", "rail": "🚂", "funicular": "🚡"}.get(result.route_type, "🚍")
+        print(f"{icon} Route {result.route_name} ({result.route_type})")
+        print(f"📏 Route length: {result.path_length_km:.1f} km")
+        if result.headsigns:
+            print(f"🚏 Destinations: {' / '.join(result.headsigns[:2])}")
+        if result.route_color:
+            print(f"🎨 Color: {result.route_color}")
+        print()
+        print("Features within 50m:")
+        print(f"  🏠 Buildings: {result.building_count}")
+        print(f"  🌳 Trees: {result.tree_count}")
+        print(f"  🪑 Benches: {result.bench_count}")
+        print(f"  ⛲ Fountains: {result.fountain_count}")
+        print(f"  🚻 Toilets: {result.toilet_count}")
+
+    return 0
+
+
+def cmd_route_stats(args: argparse.Namespace) -> int:
+    """Show route-building index statistics."""
+    from .query import get_route_statistics
+    import json as json_module
+
+    stats = get_route_statistics()
+
+    if args.json:
+        print(json_module.dumps(stats, indent=2))
+    else:
+        print("Route-Building Index Statistics")
+        print("=" * 40)
+        print(f"Total routes: {stats['total_routes']}")
+        print(f"Buildings indexed: {stats['total_buildings_indexed']}")
+        print(f"Buffer distance: {stats['buffer_m']}m")
+        print()
+        print(f"Most buildings:  Route {stats['max_buildings_route']} ({stats['max_buildings_count']} buildings)")
+        print(f"Least buildings: Route {stats['min_buildings_route']} ({stats['min_buildings_count']} buildings)")
+        print(f"Longest route:   Route {stats['max_length_route']} ({stats['max_length_km']} km)")
+        print()
+        print("By transit type:")
+        for ttype, data in sorted(stats.get("by_type", {}).items()):
+            avg_buildings = data["total_buildings"] // data["count"] if data["count"] > 0 else 0
+            print(f"  {ttype:10s}: {data['count']:3d} routes, "
+                  f"{data['total_buildings']:6d} buildings total ({avg_buildings} avg)")
+        print()
+        print(f"Index created: {stats.get('created', 'Unknown')}")
+
+    return 0
+
+
+def cmd_compare_routes(args: argparse.Namespace) -> int:
+    """Compare multiple transit routes."""
+    from .query import compare_routes
+    import json as json_module
+
+    if len(args.routes) < 2:
+        print("Error: Need at least 2 routes to compare", file=sys.stderr)
+        return 1
+
+    result = compare_routes(args.routes)
+
+    if args.json:
+        print(json_module.dumps(result, indent=2))
+    else:
+        print("Route Comparison")
+        print("=" * 40)
+        for r in result.get("routes", []):
+            print(f"  Route {r['route_name']}: {r['building_count']} buildings, "
+                  f"{r['path_length_km']:.1f} km")
+        print()
+        print(f"Shared buildings: {result['shared_building_count']}")
+        print(f"Total unique buildings: {result['total_unique_buildings']}")
+
+    return 0
+
+
+def cmd_path_stats(args: argparse.Namespace) -> int:
+    """Analyze what you passed along a path."""
+    from .query import analyze_user_path
+    import json as json_module
+
+    # Parse path from "lng,lat;lng,lat;..." format
+    try:
+        coords = []
+        for point in args.path.split(";"):
+            lng, lat = map(float, point.strip().split(","))
+            coords.append((lng, lat))
+    except ValueError as e:
+        print(f"Error parsing path: {e}", file=sys.stderr)
+        print("Expected format: lng,lat;lng,lat;lng,lat")
+        return 1
+
+    result = analyze_user_path(coords, buffer_m=args.buffer)
+
+    if args.json:
+        print(json_module.dumps(result, indent=2))
+    else:
+        print("Path Analysis")
+        print("=" * 40)
+        print(f"📏 Distance: {result['distance_km']:.2f} km")
+        print(f"📍 Points: {result['path_points']}")
+        print(f"🏠 Buildings passed: {result['buildings_passed']}")
+        print(f"↔️ Buffer: {result['buffer_m']}m")
+
+    return 0
+
+
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -452,6 +871,142 @@ def main() -> int:
     # Info command
     subparsers.add_parser("info", help="Show data source information")
 
+    # =========================================================================
+    # SPATIAL QUERY COMMANDS
+    # =========================================================================
+
+    from datetime import datetime
+
+    # shadow command - Query shadow at a 3D point
+    shadow_parser = subparsers.add_parser(
+        "shadow",
+        help="Query shadow at a 3D point",
+        description="Check if a location is in sun or shade at a specific time."
+    )
+    shadow_parser.add_argument("--lat", type=float, required=True, help="Latitude (WGS84)")
+    shadow_parser.add_argument("--lng", type=float, required=True, help="Longitude (WGS84)")
+    shadow_parser.add_argument("--time", default="12:00", help="Time HH:MM (default: 12:00)")
+    shadow_parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"),
+                              help="Date YYYY-MM-DD (default: today)")
+    shadow_parser.add_argument("--height", type=float, default=1.7,
+                              help="Height in meters above ground (default: 1.7m standing)")
+    shadow_parser.add_argument("--floor", type=int,
+                              help="Floor number (overrides --height, assumes 3m/floor + 1.5m)")
+    shadow_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # balcony command - Analyze sun exposure for a balcony
+    balcony_parser = subparsers.add_parser(
+        "balcony",
+        help="Analyze sun exposure for a balcony",
+        description="Calculate how much sun a balcony gets throughout the day."
+    )
+    balcony_parser.add_argument("--lat", type=float, required=True, help="Latitude (WGS84)")
+    balcony_parser.add_argument("--lng", type=float, required=True, help="Longitude (WGS84)")
+    balcony_parser.add_argument("--floor", type=int, required=True,
+                               help="Floor number (0=ground floor)")
+    balcony_parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"),
+                               help="Date YYYY-MM-DD (default: today)")
+    balcony_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # shadow-timeline command - Get shadow throughout a day
+    timeline_parser = subparsers.add_parser(
+        "shadow-timeline",
+        help="Get shadow timeline for a point",
+        description="See how shadow changes throughout the day at a location."
+    )
+    timeline_parser.add_argument("--lat", type=float, required=True, help="Latitude (WGS84)")
+    timeline_parser.add_argument("--lng", type=float, required=True, help="Longitude (WGS84)")
+    timeline_parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"),
+                                help="Date YYYY-MM-DD (default: today)")
+    timeline_parser.add_argument("--height", type=float, default=1.7,
+                                help="Height in meters (default: 1.7m standing)")
+    timeline_parser.add_argument("--floor", type=int,
+                                help="Floor number (overrides --height)")
+    timeline_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # nearest command - Find nearest amenity
+    nearest_parser = subparsers.add_parser(
+        "nearest",
+        help="Find nearest amenity",
+        description="Find the nearest bench, fountain, or toilet."
+    )
+    nearest_parser.add_argument("--lat", type=float, required=True, help="Latitude (WGS84)")
+    nearest_parser.add_argument("--lng", type=float, required=True, help="Longitude (WGS84)")
+    nearest_parser.add_argument("--type", required=True, choices=["bench", "fountain", "toilet"],
+                               help="Type of amenity to find")
+    nearest_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # find command - Find amenities within radius
+    find_parser = subparsers.add_parser(
+        "find",
+        help="Find amenities within radius",
+        description="Find all benches, fountains, or toilets within a radius."
+    )
+    find_parser.add_argument("--lat", type=float, required=True, help="Latitude (WGS84)")
+    find_parser.add_argument("--lng", type=float, required=True, help="Longitude (WGS84)")
+    find_parser.add_argument("--type", required=True, choices=["bench", "fountain", "toilet"],
+                            help="Type of amenity to find")
+    find_parser.add_argument("--radius", type=float, default=200,
+                            help="Search radius in meters (default: 200)")
+    find_parser.add_argument("--limit", type=int, default=10,
+                            help="Maximum results (default: 10)")
+    find_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # =========================================================================
+    # ROUTE-BUILDING QUERY COMMANDS
+    # =========================================================================
+
+    # route-buildings command - Query buildings along a transit route
+    route_parser = subparsers.add_parser(
+        "route-buildings",
+        help="Query buildings along a transit route",
+        description="Count buildings within 50m of a transit route (tram, bus, etc.)"
+    )
+    route_parser.add_argument("--route", "-r", help="Route short name (e.g., '4', '11', '910')")
+    route_parser.add_argument("--list", "-l", action="store_true",
+                             help="List all routes with feature counts")
+    route_parser.add_argument("--type", choices=["tram", "bus", "rail", "funicular"],
+                             help="Filter by transit type")
+    route_parser.add_argument("--sort-by", "-s",
+                             choices=["buildings", "benches", "fountains", "toilets", "trees", "length"],
+                             default="buildings",
+                             help="Sort routes by feature (default: buildings)")
+    route_parser.add_argument("--include-ids", action="store_true",
+                             help="Include building IDs in output")
+    route_parser.add_argument("--limit", type=int, default=20,
+                             help="Limit routes shown when listing (default: 20)")
+    route_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # route-stats command - Show route-building index statistics
+    stats_parser = subparsers.add_parser(
+        "route-stats",
+        help="Show route-building index statistics",
+        description="Display summary statistics about the route-building spatial index."
+    )
+    stats_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # compare-routes command - Compare multiple routes
+    compare_parser = subparsers.add_parser(
+        "compare-routes",
+        help="Compare multiple transit routes",
+        description="Compare building coverage between multiple routes."
+    )
+    compare_parser.add_argument("routes", nargs="+",
+                               help="Route names to compare (e.g., '4 11 15')")
+    compare_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # path-stats command - Analyze what you passed along a path
+    path_parser = subparsers.add_parser(
+        "path-stats",
+        help="Analyze what you passed along a path",
+        description="Given a GPS path, count buildings and features passed."
+    )
+    path_parser.add_argument("--path", "-p", required=True,
+                            help="Path as 'lng,lat;lng,lat;...' coordinates")
+    path_parser.add_argument("--buffer", type=float, default=20,
+                            help="Buffer distance in meters (default: 20)")
+    path_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
     args = parser.parse_args()
 
     if args.command == "preview":
@@ -466,6 +1021,26 @@ def main() -> int:
         return cmd_areas(args)
     elif args.command == "info":
         return cmd_info(args)
+    # Spatial query commands
+    elif args.command == "shadow":
+        return cmd_shadow(args)
+    elif args.command == "balcony":
+        return cmd_balcony(args)
+    elif args.command == "shadow-timeline":
+        return cmd_shadow_timeline(args)
+    elif args.command == "nearest":
+        return cmd_nearest(args)
+    elif args.command == "find":
+        return cmd_find_amenities(args)
+    # Route-building query commands
+    elif args.command == "route-buildings":
+        return cmd_route_buildings(args)
+    elif args.command == "route-stats":
+        return cmd_route_stats(args)
+    elif args.command == "compare-routes":
+        return cmd_compare_routes(args)
+    elif args.command == "path-stats":
+        return cmd_path_stats(args)
     else:
         parser.print_help()
         return 0

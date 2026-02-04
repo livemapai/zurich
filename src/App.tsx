@@ -9,6 +9,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ViewerPage } from '@/pages/ViewerPage';
 import { GamePage } from '@/pages/GamePage';
+import { TransitPage } from '@/pages/TransitPage';
 
 function App() {
   return (
@@ -22,6 +23,9 @@ function App() {
 
         {/* R3F game mode */}
         <Route path="/game" element={<GamePage />} />
+
+        {/* Transit visualization mode */}
+        <Route path="/transit" element={<TransitPage />} />
 
         {/* Fallback for unknown routes */}
         <Route path="*" element={<Navigate to="/viewer" replace />} />

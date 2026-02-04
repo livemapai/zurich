@@ -1,3 +1,6 @@
+/* Import transit styles */
+@import './transit.css';
+
 /* Reset and base styles */
 *,
 *::before,

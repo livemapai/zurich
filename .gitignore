@@ -55,6 +55,10 @@ test_output/
 preview_*.png
 test_rendered_*.png
 
+# Test output images (root directory experiments)
+/*.png
+*_debug.webp
+
 # Generated GTFS/transit data (large files)
 public/data/gtfs/
 public/data/zurich-tram-trips.json

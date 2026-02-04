@@ -1,0 +1,333 @@
+/**
+ * Styles Page CSS
+ *
+ * Styling for the AI Styles viewer including the sidebar panel,
+ * style cards, and map overlay elements.
+ */
+
+/* Container layout */
+.styles-page {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: #0a0a0a;
+  overflow: hidden;
+}
+
+/* Left sidebar panel */
+.styles-panel {
+  width: 280px;
+  min-width: 280px;
+  height: 100%;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.styles-panel-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.styles-panel-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.styles-panel-header p {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Styles list */
+.styles-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.styles-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.styles-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.styles-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+/* Style card */
+.style-card {
+  padding: 0.875rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.style-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.style-card.active {
+  background: rgba(255, 140, 0, 0.1);
+  border-color: rgba(255, 140, 0, 0.4);
+}
+
+.style-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.style-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.style-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.style-indicator.complete {
+  background: #4ade80;
+}
+
+.style-indicator.partial {
+  background: #fbbf24;
+}
+
+.style-indicator.empty {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.style-indicator.satellite {
+  background: #3b82f6;
+}
+
+.style-card-name {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.style-card-count {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.style-card-description {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.625rem;
+  line-height: 1.4;
+}
+
+/* Color swatches */
+.style-colors {
+  display: flex;
+  gap: 4px;
+}
+
+.style-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Panel footer with stats */
+.styles-panel-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.styles-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.styles-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.styles-stat-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.25rem;
+}
+
+.styles-stat-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* Map container */
+.styles-map-container {
+  flex: 1;
+  position: relative;
+}
+
+/* Coverage legend - positioned to not overlap navigation controls */
+.coverage-legend {
+  position: absolute;
+  bottom: 6rem; /* Above MapLibre navigation controls */
+  right: 0.75rem;
+  background: rgba(26, 26, 46, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  backdrop-filter: blur(8px);
+  z-index: 5;
+}
+
+.coverage-legend-title {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.5rem;
+}
+
+.coverage-legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.coverage-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.coverage-legend-line {
+  width: 20px;
+  height: 2px;
+  background: #ff6600;
+}
+
+.coverage-legend-line.dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    #ff6600 0px,
+    #ff6600 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+/* Loading state */
+.styles-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Empty state for unavailable styles */
+.style-card.unavailable {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.style-card.unavailable:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Generating indicator */
+.style-generating {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #fbbf24;
+  margin-top: 0.375rem;
+}
+
+.style-generating-dot {
+  width: 6px;
+  height: 6px;
+  background: #fbbf24;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Badges container */
+.style-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Satellite badge */
+.satellite-badge {
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Generator badges */
+.generator-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.generator-badge.gemini {
+  background: rgba(147, 51, 234, 0.2);
+  color: #a78bfa;
+}
+
+.generator-badge.controlnet {
+  background: rgba(236, 72, 153, 0.2);
+  color: #f472b6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .styles-panel {
+    width: 240px;
+    min-width: 240px;
+  }
+}

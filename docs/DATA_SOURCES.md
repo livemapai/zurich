@@ -195,3 +195,80 @@ Found 500 features in public/data/zurich-buildings.geojson
 Validating all 500 features...
 ✓ public/data/zurich-buildings.geojson - Valid
 ```
+
+---
+
+## Transit Data
+
+### GTFS from opentransportdata.swiss
+
+**Source:** [opentransportdata.swiss](https://opentransportdata.swiss/)
+
+**Details:**
+| Property | Value |
+|----------|-------|
+| Format | GTFS |
+| Coverage | ZVV (Zurich transport) |
+| Routes | 365 (trams, buses, rail, funicular) |
+| License | Open |
+
+**Processed File:** `public/data/zurich-tram-trips.json`
+
+Contains 29,346 trips with paths and timestamps for real-time visualization.
+
+---
+
+## Amenities
+
+### Benches, Fountains, Toilets
+
+**Source:** [data.stadt-zuerich.ch](https://data.stadt-zuerich.ch/)
+
+| Dataset | File | Count |
+|---------|------|-------|
+| Benches | `zurich-benches.geojson` | ~7,267 |
+| Fountains | `zurich-fountains.geojson` | ~1,288 |
+| Toilets | `zurich-toilets.geojson` | ~25 |
+| Trees | `zurich-trees.geojson` | ~80,484 |
+
+---
+
+## Route-Building Spatial Index
+
+### Preprocessed Index
+
+**File:** `public/data/route-building-index.json`
+
+**Size:** ~4 MB
+
+A spatial index mapping transit routes to nearby features within 50m buffer:
+
+| Feature | Indexed Count |
+|---------|---------------|
+| Buildings | 29,162 (of 65,677) |
+| Benches | 2,793 (of 7,267) |
+| Fountains | 522 (of 1,288) |
+| Toilets | 16 (of 25) |
+
+### Rebuilding the Index
+
+```bash
+# Rebuild after data changes
+python -m scripts.preprocess.build_route_building_index -v
+
+# Dry run to preview
+python -m scripts.preprocess.build_route_building_index --dry-run -v
+```
+
+### Query Examples
+
+```bash
+# Which tram passes the most benches?
+python -m scripts.tile_pipeline.cli route-buildings -l --type tram --sort-by benches
+
+# How many buildings does Tram 11 pass?
+python -m scripts.tile_pipeline.cli route-buildings -r 11
+
+# Compare routes
+python -m scripts.tile_pipeline.cli compare-routes 4 11 15
+```

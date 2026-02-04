@@ -157,6 +157,19 @@ PRESETS: dict[str, TimePreset] = {
         cool_strength=0.1,
         ambient_level=0.9,
     ),
+
+    "shadowless": TimePreset(
+        name="Shadowless",
+        description="Sun directly overhead, no visible shadows - clean base map",
+        azimuth=180.0,  # South (doesn't matter when overhead)
+        altitude=88.0,  # Nearly vertical = no shadows
+        color_temperature=5500,  # Neutral daylight
+        shadow_darkness=0.1,  # Almost no shadow darkness
+        shadow_softness=1.0,  # Maximum softness
+        warm_strength=0.0,  # No color tinting
+        cool_strength=0.0,
+        ambient_level=0.95,  # Very high ambient = even lighting
+    ),
 }
 
 

@@ -22,9 +22,21 @@ import trimesh
 from .sources.vector import Feature
 
 
+# WGS84 semi-major axis (meters) - used for Web Mercator projection
+EARTH_RADIUS = 6378137.0
+
+
 @dataclass
 class SceneBounds:
-    """Bounds for the 3D scene in local coordinates."""
+    """Geographic bounds with Web Mercator coordinate conversion.
+
+    Web Mercator (EPSG:3857) is used because map tiles are SQUARE in this
+    projection. Using local meters (equirectangular approximation) produces
+    non-square scenes that cause tile misalignment when rendered to 512x512.
+
+    At Zurich (47°N), a zoom-16 tile is ~583m × ~583m in Web Mercator,
+    but ~414m × ~611m in local meters. This class ensures proper alignment.
+    """
 
     # WGS84 bounds
     west: float
@@ -34,35 +46,52 @@ class SceneBounds:
 
     # Derived values (computed in __post_init__)
     lat_center: float = field(init=False)
-    meters_per_deg_x: float = field(init=False)
-    meters_per_deg_y: float = field(init=False)
+    sw_mercator: Tuple[float, float] = field(init=False)
+    ne_mercator: Tuple[float, float] = field(init=False)
     width_meters: float = field(init=False)
     height_meters: float = field(init=False)
 
     def __post_init__(self):
-        """Compute derived values from WGS84 bounds."""
+        """Compute derived values using Web Mercator projection."""
         self.lat_center = (self.south + self.north) / 2
 
-        # Meters per degree at this latitude
-        # At equator: 1° = 111,320m latitude, varies for longitude
-        self.meters_per_deg_y = 111320.0
-        self.meters_per_deg_x = 111320.0 * math.cos(math.radians(self.lat_center))
+        # Convert corners to Web Mercator
+        self.sw_mercator = self._wgs84_to_mercator(self.west, self.south)
+        self.ne_mercator = self._wgs84_to_mercator(self.east, self.north)
 
-        # Scene dimensions in meters
-        self.width_meters = (self.east - self.west) * self.meters_per_deg_x
-        self.height_meters = (self.north - self.south) * self.meters_per_deg_y
+        # Scene dimensions in Web Mercator meters (will be ~square for tiles!)
+        self.width_meters = self.ne_mercator[0] - self.sw_mercator[0]
+        self.height_meters = self.ne_mercator[1] - self.sw_mercator[1]
+
+    @staticmethod
+    def _wgs84_to_mercator(lon: float, lat: float) -> Tuple[float, float]:
+        """Convert WGS84 to Web Mercator (EPSG:3857).
+
+        Formula: x = R * lon_rad, y = R * ln(tan(π/4 + lat_rad/2))
+        """
+        x = math.radians(lon) * EARTH_RADIUS
+        y = math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) * EARTH_RADIUS
+        return (x, y)
+
+    @staticmethod
+    def _mercator_to_wgs84(x: float, y: float) -> Tuple[float, float]:
+        """Convert Web Mercator to WGS84."""
+        lon = math.degrees(x / EARTH_RADIUS)
+        lat = math.degrees(2 * math.atan(math.exp(y / EARTH_RADIUS)) - math.pi / 2)
+        return (lon, lat)
 
     def wgs84_to_local(self, lon: float, lat: float) -> Tuple[float, float]:
-        """Convert WGS84 coordinates to local meters from SW corner."""
-        x = (lon - self.west) * self.meters_per_deg_x
-        y = (lat - self.south) * self.meters_per_deg_y
+        """Convert WGS84 to local scene coordinates (Web Mercator offset from SW)."""
+        mx, my = self._wgs84_to_mercator(lon, lat)
+        x = mx - self.sw_mercator[0]
+        y = my - self.sw_mercator[1]
         return (x, y)
 
     def local_to_wgs84(self, x: float, y: float) -> Tuple[float, float]:
-        """Convert local meters back to WGS84."""
-        lon = self.west + x / self.meters_per_deg_x
-        lat = self.south + y / self.meters_per_deg_y
-        return (lon, lat)
+        """Convert local scene coordinates back to WGS84."""
+        mx = x + self.sw_mercator[0]
+        my = y + self.sw_mercator[1]
+        return self._mercator_to_wgs84(mx, my)
 
 
 @dataclass

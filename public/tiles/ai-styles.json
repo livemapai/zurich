@@ -1,0 +1,87 @@
+{
+  "styles": [
+    {
+      "name": "ai-cyberpunk",
+      "displayName": "Cyberpunk",
+      "description": "Neon-lit night city with futuristic vibes",
+      "colors": [
+        "#FF00FF",
+        "#00FFFF",
+        "#1a0a2e"
+      ],
+      "tiles": 36,
+      "totalTiles": 36,
+      "bounds": [
+        8.525391,
+        47.361153,
+        8.563843,
+        47.387193
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-04T09:29:41.954769",
+      "generator": "gemini"
+    },
+    {
+      "name": "sd-winter",
+      "displayName": "Winter (ControlNet)",
+      "description": "Snow-covered cityscape with frosted trees",
+      "colors": [
+        "#FFFFFF",
+        "#E8F0F8",
+        "#C4D6E8"
+      ],
+      "tiles": 4,
+      "totalTiles": 36,
+      "bounds": [
+        8.547363,
+        47.361153,
+        8.55835,
+        47.387193
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-04T11:12:07.002502",
+      "generator": "controlnet"
+    },
+    {
+      "name": "ai-winter",
+      "displayName": "Winter",
+      "description": "Snow-covered cityscape with frosted trees",
+      "colors": [
+        "#FFFFFF",
+        "#E8F0F8",
+        "#C4D6E8"
+      ],
+      "tiles": 36,
+      "totalTiles": 36,
+      "bounds": [
+        8.525391,
+        47.361153,
+        8.563843,
+        47.387193
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-04T09:29:34.679208",
+      "generator": "gemini"
+    }
+  ],
+  "satellite": {
+    "name": "satellite",
+    "displayName": "Satellite",
+    "description": "Real satellite imagery from Swisstopo",
+    "colors": [
+      "#3D6B3D",
+      "#5A4A3A",
+      "#6B8E6B"
+    ],
+    "url": "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{y}.jpeg",
+    "tileSize": 256
+  },
+  "generatedAt": "2026-02-04T11:12:17.841356",
+  "defaultBounds": [
+    8.53,
+    47.365,
+    8.555,
+    47.385
+  ],
+  "defaultZoom": 16
+}
