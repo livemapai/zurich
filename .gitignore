@@ -46,3 +46,16 @@ data/processed/
 # Test coverage
 coverage/
 .vercel
+
+# Test outputs (generated)
+ai_test_output/
+test_output/
+
+# Generated preview/test images
+preview_*.png
+test_rendered_*.png
+
+# Generated GTFS/transit data (large files)
+public/data/gtfs/
+public/data/zurich-tram-trips.json
+public/data/zurich-tram-trips-terrain.json

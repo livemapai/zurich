@@ -45,6 +45,18 @@ export const TEXTURE_PROVIDERS = {
     name: 'Dark (Carto)',
     url: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
   },
+  cartoLight: {
+    name: 'Light (Carto)',
+    url: 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+  },
+  cartoVoyager: {
+    name: 'Voyager (Carto)',
+    url: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+  },
+  cartoDarkNoLabels: {
+    name: 'Dark No Labels (Carto)',
+    url: 'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+  },
 } as const;
 
 /**
@@ -84,9 +96,11 @@ export interface MapterhornTerrainLayerConfig {
   textureUrl?: string;
   /** Minimum zoom level (default: 4) */
   minZoom?: number;
-  /** Maximum zoom level for elevation tiles (default: 14) */
+  /** Maximum zoom level for elevation tiles (default: 15) */
   maxZoom?: number;
-  /** Mesh max error in meters - controls mesh simplification (default: 4) */
+  /** Tile size in pixels - Mapterhorn uses 512 (default: 512) */
+  tileSize?: number;
+  /** Mesh max error in meters - controls mesh simplification (default: 2) */
   meshMaxError?: number;
   /** Layer opacity (default: 1) */
   opacity?: number;
@@ -99,8 +113,9 @@ const DEFAULT_CONFIG: Required<MapterhornTerrainLayerConfig> = {
   elevationUrl: MAPTERHORN_URL,
   textureUrl: OSM_TEXTURE_URL,
   minZoom: 4,
-  maxZoom: 14,
-  meshMaxError: 4,
+  maxZoom: 15,
+  tileSize: 512,
+  meshMaxError: 2,
   opacity: 1,
   elevationScale: 1,
 };
@@ -153,6 +168,7 @@ export function createMapterhornTerrainLayer(
     texture: mergedConfig.textureUrl,
     minZoom: mergedConfig.minZoom,
     maxZoom: mergedConfig.maxZoom,
+    tileSize: mergedConfig.tileSize,
     meshMaxError: mergedConfig.meshMaxError,
     opacity: mergedConfig.opacity,
     elevationScale: mergedConfig.elevationScale,

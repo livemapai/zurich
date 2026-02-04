@@ -193,10 +193,11 @@ body {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 13px;
-  max-height: 400px;
+  max-height: calc(100vh - 120px);
   overflow-y: auto;
   z-index: 100;
-  min-width: 160px;
+  min-width: 200px;
+  max-width: 280px;
 }
 
 .layer-panel-header {
@@ -452,4 +453,269 @@ body {
   border-radius: 3px;
   font-family: monospace;
   font-size: 9px;
+}
+
+/* Time slider play controls */
+.time-slider-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.time-slider-play {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background 0.15s ease;
+}
+
+.time-slider-play:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.time-slider-play:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.time-slider-speed {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.time-slider-speed:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.time-slider-speed option {
+  background: #1a1a2e;
+  color: white;
+}
+
+/* Texture selector */
+.texture-selector {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.texture-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #888;
+}
+
+.texture-label select {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.texture-label select:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Route toggles for transit animation */
+.route-toggles {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.route-toggles-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.route-toggles-title {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.route-toggles-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.route-action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ccc;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.route-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.route-groups-container {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.route-type-group {
+  margin-bottom: 6px;
+}
+
+.route-type-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 12px;
+  transition: color 0.15s ease;
+}
+
+.route-type-header:hover {
+  color: #88c0ff;
+}
+
+.route-type-arrow {
+  font-size: 8px;
+  transition: transform 0.2s ease;
+  width: 10px;
+}
+
+.route-type-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.route-type-name {
+  flex: 1;
+}
+
+.route-type-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.route-type-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #888;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.route-type-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.route-type-btn.active {
+  background: rgba(136, 192, 255, 0.2);
+  border-color: #88c0ff;
+  color: #88c0ff;
+}
+
+.route-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 0 4px 16px;
+}
+
+.route-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.route-chip:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.route-chip.hidden {
+  opacity: 0.4;
+  background: transparent;
+}
+
+.route-chip.visible {
+  border-color: var(--route-color, #88c0ff);
+  background: rgba(var(--route-color-rgb, 136, 192, 255), 0.15);
+}
+
+.route-chip-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Scrollbar styling for route groups */
+.route-groups-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.route-groups-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.route-groups-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.route-groups-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Layer panel scrollbar */
+.layer-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.layer-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.layer-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.layer-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }

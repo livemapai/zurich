@@ -17,6 +17,8 @@ export interface BuildingsLayerConfig {
   pickable?: boolean;
   autoHighlight?: boolean;
   baseElevation?: number;
+  /** Use per-feature terrain elevation (true) or flat base elevation (false). Default: true */
+  useTerrainElevation?: boolean;
 }
 
 const DEFAULT_CONFIG: Required<BuildingsLayerConfig> = {
@@ -27,15 +29,21 @@ const DEFAULT_CONFIG: Required<BuildingsLayerConfig> = {
   pickable: true,
   autoHighlight: true,
   baseElevation: ZURICH_BASE_ELEVATION,
+  useTerrainElevation: true,
 };
 
 /**
  * Extract the outer ring from a building geometry with terrain elevation
  * Reads elevation from feature.properties.elevation (pre-computed by Python script)
+ *
+ * @param feature - Building feature with geometry and elevation property
+ * @param baseElevation - Fallback elevation if feature has no elevation
+ * @param useTerrainElevation - If true, use per-feature terrain elevation; if false, use flat base elevation
  */
 function getPolygonCoordinates(
   feature: BuildingFeature,
-  baseElevation: number
+  baseElevation: number,
+  useTerrainElevation: boolean
 ): Position3D[] {
   const { geometry } = feature;
   let coords: LngLat[];
@@ -48,8 +56,10 @@ function getPolygonCoordinates(
     coords = (geometry.coordinates[0] ?? []) as LngLat[];
   }
 
-  // Get terrain elevation from pre-computed property, fallback to base elevation
-  const elevation = feature.properties.elevation ?? baseElevation;
+  // Use terrain elevation only if enabled, otherwise use flat base elevation
+  const elevation = useTerrainElevation
+    ? (feature.properties.elevation ?? baseElevation)
+    : baseElevation;
 
   // Add terrain elevation to each coordinate
   return coords.map(([lng, lat]) => [lng, lat, elevation]);
@@ -83,7 +93,7 @@ export function createBuildingsLayer(
   return new SolidPolygonLayer<BuildingFeature>({
     id: mergedConfig.id,
     data,
-    getPolygon: (d) => getPolygonCoordinates(d, baseElev),
+    getPolygon: (d) => getPolygonCoordinates(d, baseElev, mergedConfig.useTerrainElevation),
     extruded: true,
     getElevation: (d) => d.properties.height || 10,
     getFillColor: mergedConfig.fillColor,
@@ -98,6 +108,10 @@ export function createBuildingsLayer(
       specularColor: [60, 64, 70],
     },
     elevationScale: 1,
+    // Force getPolygon re-evaluation when terrain elevation mode changes
+    updateTriggers: {
+      getPolygon: [mergedConfig.useTerrainElevation],
+    },
   });
 }
 
@@ -123,7 +137,7 @@ export function createMinimapBuildingsLayer(
   return new SolidPolygonLayer<BuildingFeature>({
     id: mergedConfig.id,
     data,
-    getPolygon: (d) => getPolygonCoordinates(d, 0), // Minimap uses z=0 (2D view)
+    getPolygon: (d) => getPolygonCoordinates(d, 0, false), // Minimap uses z=0 (2D view, flat)
     extruded: false, // Flat for minimap
     getFillColor: mergedConfig.fillColor,
     opacity: mergedConfig.opacity,

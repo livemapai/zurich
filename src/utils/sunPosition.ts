@@ -37,8 +37,9 @@ export const TIME_PRESETS = {
  * Convert time in minutes (from midnight) to formatted HH:MM string
  */
 export function formatTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  const roundedMinutes = Math.round(minutes);
+  const hours = Math.floor(roundedMinutes / 60);
+  const mins = roundedMinutes % 60;
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 

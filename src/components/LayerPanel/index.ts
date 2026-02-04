@@ -1,1 +1,6 @@
-export { LayerPanel, type LayerPanelProps, type LayerDefinition } from './LayerPanel';
+export {
+	LayerPanel,
+	type LayerPanelProps,
+	type LayerDefinition,
+	type RouteInfo,
+} from "./LayerPanel";
