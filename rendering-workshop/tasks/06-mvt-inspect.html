@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task 6: MVT Inspection - MapLibre Workshop</title>
+
+  <!-- MapLibre -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../assets/styles.css">
+
+  <style>
+    /* MVT Inspector specific layout */
+    .mvt-layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    .mvt-sidebar {
+      width: 400px;
+      padding: 1.5rem;
+      background: var(--color-bg-surface);
+      overflow-y: auto;
+      border-right: 1px solid var(--color-border);
+    }
+
+    .mvt-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mvt-map-container {
+      height: 45%;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .mvt-inspector {
+      flex: 1;
+      background: var(--color-bg-deep);
+      border-top: 1px solid var(--color-border);
+      overflow: auto;
+      padding: 1rem;
+    }
+
+    .tile-selector {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(41, 37, 36, 0.95);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--color-border);
+    }
+
+    .tile-selector h3 {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      color: var(--color-primary);
+      font-family: var(--font-heading);
+    }
+
+    .tile-selector input {
+      width: 60px;
+      padding: 0.375rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
+      margin-right: 0.5rem;
+      font-size: 0.875rem;
+      font-family: var(--font-mono);
+    }
+
+    .tile-selector button {
+      padding: 0.5rem 1rem;
+      background: var(--color-primary);
+      color: var(--color-bg-deep);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background-color 0.2s;
+    }
+
+    .tile-selector button:hover {
+      background: var(--color-primary-light);
+    }
+
+    .tile-selector .current-tile {
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+
+    .inspector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .inspector-header h3 {
+      color: var(--color-primary);
+      font-size: 1rem;
+      font-family: var(--font-heading);
+    }
+
+    .inspector-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .inspector-tabs button {
+      padding: 0.375rem 0.75rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .inspector-tabs button.active {
+      background: rgba(217, 119, 6, 0.2);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .layer-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .layer-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .layer-card:hover {
+      background: rgba(255,255,255,0.06);
+      transform: translateY(-1px);
+    }
+
+    .layer-card.selected {
+      background: rgba(217, 119, 6, 0.1);
+      border-color: var(--color-primary);
+    }
+
+    .layer-card .name {
+      font-weight: 600;
+      color: var(--color-text);
+      font-size: 0.875rem;
+    }
+
+    .layer-card .stats {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .feature-detail {
+      background: rgba(0,0,0,0.3);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    .feature-detail .key { color: var(--color-accent); }
+    .feature-detail .value { color: var(--color-success); }
+    .feature-detail .type { color: var(--color-primary); }
+
+    .loading {
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 1024px) {
+      .mvt-layout {
+        flex-direction: column;
+      }
+      .mvt-sidebar {
+        width: 100%;
+        max-height: 40vh;
+        order: 2;
+      }
+      .mvt-main {
+        order: 1;
+      }
+      .mvt-map-container {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="mvt-layout">
+    <aside class="mvt-sidebar">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge">Task 6 of 7</span>
+      <h1>MVT Inspection: Inside the Binary</h1>
+
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>See the actual structure of MVT (Mapbox Vector Tile) data - the layers, features, properties, and geometry that make up each tile.</p>
+      </div>
+
+      <h2>MVT = Protobuf</h2>
+      <p>
+        <strong>MVT</strong> (Mapbox Vector Tile) is the <em>specification</em> that defines
+        how map data is structured. <strong>PBF</strong> (Protocol Buffer Format) is Google's
+        binary format used to <em>encode</em> that structure.
+      </p>
+      <div class="code-block" data-language="Concept">
+        <pre><code>MVT Spec     + Protobuf Encoding = .pbf file
+(what data)    (how it's packed)   (what you download)</code></pre>
+      </div>
+
+      <h2>What's in an MVT File?</h2>
+      <p>Each <code>.pbf</code> tile contains:</p>
+      <ul>
+        <li><strong>Layers</strong>: Named collections (building, road, water...)</li>
+        <li><strong>Features</strong>: Individual shapes with properties</li>
+        <li><strong>Geometry</strong>: Encoded as commands (MoveTo, LineTo, ClosePath)</li>
+        <li><strong>Properties</strong>: Key-value attributes</li>
+      </ul>
+
+      <h2>The Protobuf Structure</h2>
+      <div class="code-block" data-language="Structure">
+        <pre><code>Tile {
+  layers: [
+    Layer {
+      name: "building"
+      extent: 4096
+      keys: ["height", "type"]
+      values: [25, "residential"]
+      features: [
+        Feature {
+          id: 12345
+          tags: [0, 0, 1, 1]  // key_idx, val_idx pairs
+          type: POLYGON
+          geometry: [9, 200, 400, 26, ...]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+      </div>
+
+      <h2>Hands-On Exercise</h2>
+      <ol>
+        <li>Click on the map to select a tile</li>
+        <li>Or enter specific Z/X/Y coordinates</li>
+        <li>Click "Fetch & Inspect" to decode the tile</li>
+        <li>Explore the layers and features</li>
+        <li>Click a layer to see its fields</li>
+      </ol>
+
+      <div class="hint-box">
+        <strong>The Inspector Panel</strong> below decodes the raw protobuf bytes and shows you exactly what data the browser receives. This is what MapLibre parses to render the map!
+      </div>
+
+      <h2>Key Observations</h2>
+      <ul>
+        <li>Keys/values are <strong>deduplicated</strong> per layer</li>
+        <li>Features reference keys/values by <strong>index</strong></li>
+        <li>Geometry uses <strong>integer coordinates</strong> (0-4096)</li>
+        <li>Everything is <strong>compressed</strong> with protobuf</li>
+      </ul>
+
+      <div class="success-box">
+        <strong>Success Criteria:</strong> You can inspect a tile, identify its layers, and understand how properties are stored with key/value deduplication.
+      </div>
+
+      <div class="nav-links">
+        <a href="05-planetiler/instructions.html">&larr; Previous: Planetiler</a>
+        <a href="07-tilejson.html">Next: TileJSON &rarr;</a>
+      </div>
+    </aside>
+
+    <div class="mvt-main">
+      <div class="mvt-map-container">
+        <div id="map"></div>
+        <div class="tile-selector">
+          <h3>Select Tile</h3>
+          <div>
+            <input type="number" id="zoom" value="10" min="0" max="14" placeholder="Z">
+            <input type="number" id="tileX" value="534" placeholder="X">
+            <input type="number" id="tileY" value="359" placeholder="Y">
+            <button id="fetchTile">Fetch & Inspect</button>
+          </div>
+          <div class="current-tile">
+            Click map to select tile, or enter coordinates above
+          </div>
+        </div>
+      </div>
+
+      <div class="mvt-inspector">
+        <div class="inspector-header">
+          <h3>Tile Inspector</h3>
+          <div class="inspector-tabs">
+            <button class="active" data-tab="layers">Layers</button>
+            <button data-tab="raw">Raw Data</button>
+          </div>
+        </div>
+
+        <div id="inspector-content">
+          <p class="loading">Click "Fetch & Inspect" to analyze a tile...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../assets/workshop.js"></script>
+
+  <!-- Map Initialization -->
+  <script>
+    // Initialize map
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://demotiles.maplibre.org/style.json',
+      center: [8.54, 47.37],
+      zoom: 10,
+      hash: 'map'
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+    map.showTileBoundaries = true;
+
+    // State
+    let currentTileData = null;
+    let selectedLayer = null;
+    let currentTab = 'layers';
+
+    // Convert lat/lng to tile coordinates
+    function latLngToTile(lat, lng, zoom) {
+      const n = Math.pow(2, zoom);
+      const x = Math.floor(((lng + 180) / 360) * n);
+      const latRad = (lat * Math.PI) / 180;
+      const y = Math.floor(((1 - Math.asinh(Math.tan(latRad)) / Math.PI) / 2) * n);
+      return { z: zoom, x, y };
+    }
+
+    // Update tile selector on map click
+    map.on('click', (e) => {
+      const zoom = Math.floor(map.getZoom());
+      const tile = latLngToTile(e.lngLat.lat, e.lngLat.lng, zoom);
+      document.getElementById('zoom').value = tile.z;
+      document.getElementById('tileX').value = tile.x;
+      document.getElementById('tileY').value = tile.y;
+      document.querySelector('.current-tile').textContent =
+        `Selected: z=${tile.z}, x=${tile.x}, y=${tile.y}`;
+    });
+
+    // Minimal MVT parser (simplified for educational purposes)
+    function parseMVT(buffer) {
+      const view = new DataView(buffer);
+      const layers = [];
+
+      return {
+        byteLength: buffer.byteLength,
+        note: 'Raw protobuf data - see decoded layers below'
+      };
+    }
+
+    // Fetch and analyze tile using MapLibre's internal parsing
+    async function fetchAndInspect() {
+      const z = parseInt(document.getElementById('zoom').value);
+      const x = parseInt(document.getElementById('tileX').value);
+      const y = parseInt(document.getElementById('tileY').value);
+
+      const content = document.getElementById('inspector-content');
+      content.innerHTML = '<p class="loading">Fetching tile...</p>';
+
+      try {
+        const url = `https://demotiles.maplibre.org/tiles/${z}/${x}/${y}.pbf`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const tileData = await decodeMVT(buffer);
+        currentTileData = tileData;
+        selectedLayer = null;
+
+        renderInspector();
+
+        const center = map.getCenter();
+        const point = map.project(center);
+        const features = map.queryRenderedFeatures(point);
+        console.log('Rendered features at center:', features);
+
+      } catch (error) {
+        content.innerHTML = `<p style="color: var(--color-error);">Error: ${error.message}</p>
+          <p style="color: var(--color-text-muted); font-size: 0.8rem;">
+            Try a different tile coordinate. Not all tiles exist in the demo tileset.
+          </p>`;
+      }
+    }
+
+    // Simple MVT protobuf decoder
+    async function decodeMVT(buffer) {
+      const data = new Uint8Array(buffer);
+      const layers = [];
+
+      let pos = 0;
+
+      function readVarint() {
+        let result = 0;
+        let shift = 0;
+        while (pos < data.length) {
+          const byte = data[pos++];
+          result |= (byte & 0x7f) << shift;
+          if ((byte & 0x80) === 0) break;
+          shift += 7;
+        }
+        return result;
+      }
+
+      function readString(length) {
+        const str = new TextDecoder().decode(data.slice(pos, pos + length));
+        pos += length;
+        return str;
+      }
+
+      function readBytes(length) {
+        const bytes = data.slice(pos, pos + length);
+        pos += length;
+        return bytes;
+      }
+
+      function parseLayer(layerBytes) {
+        const layer = {
+          name: '',
+          features: [],
+          keys: [],
+          values: [],
+          extent: 4096,
+          version: 2
+        };
+
+        let lpos = 0;
+        const ldata = new Uint8Array(layerBytes);
+
+        function lReadVarint() {
+          let result = 0;
+          let shift = 0;
+          while (lpos < ldata.length) {
+            const byte = ldata[lpos++];
+            result |= (byte & 0x7f) << shift;
+            if ((byte & 0x80) === 0) break;
+            shift += 7;
+          }
+          return result;
+        }
+
+        while (lpos < ldata.length) {
+          const tag = lReadVarint();
+          const fieldNum = tag >> 3;
+          const wireType = tag & 0x7;
+
+          if (wireType === 0) {
+            const value = lReadVarint();
+            if (fieldNum === 5) layer.extent = value;
+            if (fieldNum === 15) layer.version = value;
+          } else if (wireType === 2) {
+            const length = lReadVarint();
+            const bytes = ldata.slice(lpos, lpos + length);
+            lpos += length;
+
+            if (fieldNum === 1) {
+              layer.name = new TextDecoder().decode(bytes);
+            } else if (fieldNum === 2) {
+              layer.features.push({ rawBytes: bytes.length });
+            } else if (fieldNum === 3) {
+              layer.keys.push(new TextDecoder().decode(bytes));
+            } else if (fieldNum === 4) {
+              const valStr = parseValue(bytes);
+              layer.values.push(valStr);
+            }
+          }
+        }
+
+        return layer;
+      }
+
+      function parseValue(bytes) {
+        let vpos = 0;
+        const vdata = new Uint8Array(bytes);
+
+        function vReadVarint() {
+          let result = 0;
+          let shift = 0;
+          while (vpos < vdata.length) {
+            const byte = vdata[vpos++];
+            result |= (byte & 0x7f) << shift;
+            if ((byte & 0x80) === 0) break;
+            shift += 7;
+          }
+          return result;
+        }
+
+        while (vpos < vdata.length) {
+          const tag = vReadVarint();
+          const fieldNum = tag >> 3;
+          const wireType = tag & 0x7;
+
+          if (wireType === 0) {
+            const value = vReadVarint();
+            if (fieldNum === 4) return value;
+            if (fieldNum === 5) return value;
+            if (fieldNum === 6) return !!value;
+          } else if (wireType === 1) {
+            const float = new DataView(vdata.buffer, vdata.byteOffset + vpos, 8).getFloat64(0, true);
+            vpos += 8;
+            if (fieldNum === 3) return float;
+          } else if (wireType === 2) {
+            const length = vReadVarint();
+            const str = new TextDecoder().decode(vdata.slice(vpos, vpos + length));
+            vpos += length;
+            if (fieldNum === 1) return str;
+          } else if (wireType === 5) {
+            const float = new DataView(vdata.buffer, vdata.byteOffset + vpos, 4).getFloat32(0, true);
+            vpos += 4;
+            if (fieldNum === 2) return float;
+          }
+        }
+
+        return null;
+      }
+
+      while (pos < data.length) {
+        const tag = readVarint();
+        const fieldNum = tag >> 3;
+        const wireType = tag & 0x7;
+
+        if (wireType === 2 && fieldNum === 3) {
+          const length = readVarint();
+          const layerBytes = readBytes(length);
+          const layer = parseLayer(layerBytes);
+          layers.push(layer);
+        } else if (wireType === 0) {
+          readVarint();
+        } else if (wireType === 2) {
+          const length = readVarint();
+          pos += length;
+        }
+      }
+
+      return {
+        layers,
+        byteLength: buffer.byteLength
+      };
+    }
+
+    // Render inspector content
+    function renderInspector() {
+      const content = document.getElementById('inspector-content');
+
+      if (!currentTileData) {
+        content.innerHTML = '<p class="loading">No tile data loaded</p>';
+        return;
+      }
+
+      if (currentTab === 'layers') {
+        let html = `
+          <div class="layer-list">
+            ${currentTileData.layers.map((layer, i) => `
+              <div class="layer-card ${selectedLayer === i ? 'selected' : ''}"
+                   onclick="selectLayer(${i})">
+                <div class="name">${layer.name || '(unnamed)'}</div>
+                <div class="stats">
+                  ${layer.features.length} features<br>
+                  ${layer.keys.length} keys, ${layer.values.length} values
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        if (selectedLayer !== null) {
+          const layer = currentTileData.layers[selectedLayer];
+          html += `
+            <h4 style="color: var(--color-primary); margin-bottom: 0.5rem; font-family: var(--font-heading);">
+              Layer: ${layer.name}
+            </h4>
+            <div class="feature-detail">
+              <div><span class="key">extent:</span> <span class="value">${layer.extent}</span></div>
+              <div><span class="key">version:</span> <span class="value">${layer.version}</span></div>
+              <div><span class="key">features:</span> <span class="value">${layer.features.length}</span></div>
+              <br>
+              <div><span class="key">keys[]:</span></div>
+              ${layer.keys.map((k, i) => `<div>  [${i}] <span class="value">"${k}"</span></div>`).join('')}
+              <br>
+              <div><span class="key">values[]:</span></div>
+              ${layer.values.map((v, i) => `<div>  [${i}] <span class="value">${JSON.stringify(v)}</span> <span class="type">(${typeof v})</span></div>`).join('')}
+            </div>
+          `;
+        }
+
+        html += `
+          <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--color-text-muted);">
+            Total tile size: ${currentTileData.byteLength.toLocaleString()} bytes
+          </p>
+        `;
+
+        content.innerHTML = html;
+      } else if (currentTab === 'raw') {
+        content.innerHTML = `
+          <div class="feature-detail">
+            <pre>${JSON.stringify(currentTileData, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Select layer
+    window.selectLayer = function(index) {
+      selectedLayer = index;
+      renderInspector();
+    };
+
+    // Tab switching
+    document.querySelectorAll('.inspector-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.inspector-tabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
+        renderInspector();
+      });
+    });
+
+    // Fetch button
+    document.getElementById('fetchTile').addEventListener('click', fetchAndInspect);
+
+    // Console logging
+    console.log('%c=== MVT Inspector Workshop ===', 'color: #d97706; font-size: 16px; font-weight: bold');
+    console.log('%cExplore the binary structure of vector tiles!', 'color: #0ea5e9');
+    console.log('Click on the map to select a tile, then click "Fetch & Inspect"');
+  </script>
+</body>
+</html>

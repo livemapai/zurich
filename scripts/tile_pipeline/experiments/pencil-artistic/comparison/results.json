@@ -1,0 +1,34 @@
+{
+  "experiment": {
+    "timestamp": "2026-02-05T20:16:01.158781",
+    "source_dir": "scripts/tile_pipeline/assets/stitching_tests/raw",
+    "prompt": "architectural pencil sketch",
+    "temperature": 0.3
+  },
+  "results": [
+    {
+      "approach_id": 4,
+      "approach_name": "pre_stitch_3x3",
+      "elapsed_seconds": 17.91321611404419,
+      "api_calls": 2,
+      "seam_score": 14.088398933410645,
+      "tiles_generated": 12
+    },
+    {
+      "approach_id": 6,
+      "approach_name": "pre_stitch_full_grid",
+      "elapsed_seconds": 9.4082350730896,
+      "api_calls": 1,
+      "seam_score": 8.246859550476074,
+      "tiles_generated": 12
+    },
+    {
+      "approach_id": 13,
+      "approach_name": "overlap_feathered_blend",
+      "elapsed_seconds": 47.33018660545349,
+      "api_calls": 6,
+      "seam_score": 25.745805740356445,
+      "tiles_generated": 12
+    }
+  ]
+}

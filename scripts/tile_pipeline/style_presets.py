@@ -29,6 +29,7 @@ class DataDrivenStylePreset:
     - Weather effects (snow, rain, fog)
     - Color grading (saturation, temperature shift)
     - Special effects (neon, bloom, etc.)
+    - Texture settings (AI-generated textures from satellite analysis)
     """
 
     name: str
@@ -56,11 +57,23 @@ class DataDrivenStylePreset:
     use_tree_species: bool = True  # Use per-tree species colors
     use_street_lights: bool = False  # Enable street light points
 
+    # Render additional features
+    render_streets: bool = True  # Render street surfaces
+    render_water: bool = True  # Render water bodies (lakes, rivers)
+
+    # Texture settings (AI-generated textures)
+    use_textures: bool = False  # Enable textured materials (vs solid colors)
+    texture_scale: float = 0.1  # Meters per texture repeat (smaller = more repetition)
+    texture_from_satellite: bool = True  # Generate textures from satellite analysis
+
     # Color grading
     saturation: float = 1.0  # 0.0-2.0
     contrast: float = 1.0  # 0.0-2.0
     temperature_shift: float = 0.0  # -1.0 (cold blue) to +1.0 (warm orange)
     brightness: float = 1.0  # 0.5-1.5
+
+    # Isometric settings
+    isometric_angle: float = 12.0  # Degrees from vertical (0=top-down, 30=classic isometric)
 
     # Sky appearance
     sky_color: tuple = (0.7, 0.8, 1.0)  # RGB
@@ -87,10 +100,16 @@ class DataDrivenStylePreset:
             "use_building_types": self.use_building_types,
             "use_tree_species": self.use_tree_species,
             "use_street_lights": self.use_street_lights,
+            "render_streets": self.render_streets,
+            "render_water": self.render_water,
+            "use_textures": self.use_textures,
+            "texture_scale": self.texture_scale,
+            "texture_from_satellite": self.texture_from_satellite,
             "saturation": self.saturation,
             "contrast": self.contrast,
             "temperature_shift": self.temperature_shift,
             "brightness": self.brightness,
+            "isometric_angle": self.isometric_angle,
             "sky_color": list(self.sky_color),
             "ambient_strength": self.ambient_strength,
             "allow_llm_variation": self.allow_llm_variation,
@@ -288,12 +307,13 @@ STYLE_PRESETS: Dict[str, DataDrivenStylePreset] = {
     # Isometric 3D view - shows building facades
     "isometric": DataDrivenStylePreset(
         name="Isometric 3D",
-        description="Tilted camera showing building walls for 3D depth",
+        description="Factorio-style tilted view with geographic accuracy",
         season="summer",
         time_of_day="afternoon",
         sun_altitude=35,
         sun_azimuth=225,
         sun_strength=3.0,
+        isometric_angle=12.0,  # Low angle like Factorio
         use_building_types=True,
         use_tree_species=True,
     ),
@@ -308,8 +328,60 @@ STYLE_PRESETS: Dict[str, DataDrivenStylePreset] = {
         sun_warmth=1.6,
         sun_strength=2.5,
         temperature_shift=0.3,
+        isometric_angle=12.0,  # Low angle like Factorio
         use_building_types=True,
         use_tree_species=True,
+    ),
+
+    # Textured presets - use AI-generated textures from satellite analysis
+    "textured": DataDrivenStylePreset(
+        name="Textured",
+        description="Realistic rendering with AI-generated textures from satellite imagery",
+        season="summer",
+        time_of_day="afternoon",
+        sun_strength=3.0,
+        use_building_types=True,
+        use_tree_species=True,
+        use_textures=True,
+        texture_scale=0.1,  # 10cm per texture repeat
+        texture_from_satellite=True,
+    ),
+
+    "textured_isometric": DataDrivenStylePreset(
+        name="Textured Isometric",
+        description="Isometric view with AI-generated textures showing building facades",
+        season="summer",
+        time_of_day="afternoon",
+        sun_altitude=35,
+        sun_azimuth=225,
+        sun_strength=3.0,
+        isometric_angle=12.0,
+        use_building_types=True,
+        use_tree_species=True,
+        use_textures=True,
+        texture_scale=0.1,
+        texture_from_satellite=True,
+    ),
+
+    "textured_winter": DataDrivenStylePreset(
+        name="Textured Winter",
+        description="Snow-covered scene with textured buildings",
+        season="winter",
+        time_of_day="afternoon",
+        sun_altitude=20,
+        sun_warmth=0.7,
+        sun_strength=2.0,
+        snow_coverage=0.8,
+        saturation=0.85,
+        temperature_shift=-0.15,
+        brightness=1.1,
+        sky_color=(0.75, 0.82, 0.95),
+        ambient_strength=0.4,
+        use_building_types=True,
+        use_tree_species=True,
+        use_textures=True,
+        texture_scale=0.1,
+        texture_from_satellite=True,
     ),
 }
 

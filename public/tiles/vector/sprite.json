@@ -1,0 +1,170 @@
+{
+  "pencil-line-thin": {
+    "x": 0,
+    "y": 0,
+    "width": 64,
+    "height": 8,
+    "pixelRatio": 1
+  },
+  "pencil-line-medium": {
+    "x": 64,
+    "y": 0,
+    "width": 64,
+    "height": 12,
+    "pixelRatio": 1
+  },
+  "pencil-line-thick": {
+    "x": 128,
+    "y": 0,
+    "width": 64,
+    "height": 16,
+    "pixelRatio": 1
+  },
+  "paper-texture": {
+    "x": 192,
+    "y": 0,
+    "width": 64,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "hatching-45": {
+    "x": 0,
+    "y": 64,
+    "width": 64,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "crosshatch": {
+    "x": 64,
+    "y": 64,
+    "width": 64,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "stipple": {
+    "x": 128,
+    "y": 64,
+    "width": 64,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "water-ripple": {
+    "x": 192,
+    "y": 64,
+    "width": 64,
+    "height": 32,
+    "pixelRatio": 1
+  },
+  "dash-medium": {
+    "x": 0,
+    "y": 128,
+    "width": 25,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "dash-short": {
+    "x": 64,
+    "y": 128,
+    "width": 25,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-medium-2": {
+    "x": 128,
+    "y": 128,
+    "width": 22,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-medium-3": {
+    "x": 192,
+    "y": 128,
+    "width": 25,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-solid-thick": {
+    "x": 0,
+    "y": 192,
+    "width": 28,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-solid": {
+    "x": 64,
+    "y": 192,
+    "width": 25,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-thick-grainy": {
+    "x": 128,
+    "y": 192,
+    "width": 40,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-thin-2": {
+    "x": 192,
+    "y": 192,
+    "width": 18,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-thin-3": {
+    "x": 0,
+    "y": 256,
+    "width": 20,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "line-very-heavy": {
+    "x": 64,
+    "y": 256,
+    "width": 45,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "symbol-arrow": {
+    "x": 128,
+    "y": 256,
+    "width": 30,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "symbol-cross": {
+    "x": 192,
+    "y": 256,
+    "width": 30,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "symbol-x": {
+    "x": 0,
+    "y": 320,
+    "width": 30,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "zigzag-bold": {
+    "x": 64,
+    "y": 320,
+    "width": 45,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "zigzag-fine": {
+    "x": 128,
+    "y": 320,
+    "width": 35,
+    "height": 64,
+    "pixelRatio": 1
+  },
+  "zigzag-medium": {
+    "x": 192,
+    "y": 320,
+    "width": 40,
+    "height": 64,
+    "pixelRatio": 1
+  }
+}

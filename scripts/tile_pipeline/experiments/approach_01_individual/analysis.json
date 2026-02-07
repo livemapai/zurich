@@ -1,0 +1,8 @@
+{
+  "approach_id": 1,
+  "approach_name": "individual",
+  "elapsed_seconds": 93.78926706314087,
+  "api_calls": 12,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 

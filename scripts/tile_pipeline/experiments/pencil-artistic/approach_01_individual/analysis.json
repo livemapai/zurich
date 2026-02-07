@@ -1,0 +1,17 @@
+{
+  "approach_id": 1,
+  "approach_name": "individual",
+  "elapsed_seconds": 107.9855329990387,
+  "api_calls": 12,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 30.583703994750977,
+    "horizontal_score": 30.18462371826172,
+    "vertical_score": 31.03267478942871,
+    "worst_seam": {
+      "tiles": "D-H",
+      "type": "vertical",
+      "mean_diff": 63.86686325073242
+    }
+  }
+}

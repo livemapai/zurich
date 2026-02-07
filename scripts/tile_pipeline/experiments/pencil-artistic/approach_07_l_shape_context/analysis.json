@@ -1,0 +1,17 @@
+{
+  "approach_id": 7,
+  "approach_name": "l_shape_context",
+  "elapsed_seconds": 101.16857385635376,
+  "api_calls": 11,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 25.54315185546875,
+    "horizontal_score": 22.775318145751953,
+    "vertical_score": 28.656963348388672,
+    "worst_seam": {
+      "tiles": "B-F",
+      "type": "vertical",
+      "mean_diff": 37.58512496948242
+    }
+  }
+}

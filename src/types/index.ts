@@ -678,5 +678,96 @@ export interface TramTripsData {
 	};
 }
 
+// ============================================================================
+// GeoJSON Types for Streets
+// ============================================================================
+
+/** Properties for a street feature */
+export interface StreetProperties {
+	/** Unique street segment identifier */
+	id: string;
+	/** Street name (e.g., "Bahnhofstrasse") */
+	street_name: string;
+	/** Street classification type */
+	street_type: StreetType;
+	/** Street width in meters */
+	width: number;
+	/** Classification order from source data */
+	ordnung?: string;
+	/** Ground elevation in meters (optional) */
+	elevation?: number;
+}
+
+/** Street classification types based on Swiss road hierarchy */
+export type StreetType =
+	| "Hauptstrasse"         // Major road (12m width)
+	| "Verbindungsstrasse"   // Connection road (10m)
+	| "Sammelstrasse"        // Collector road (8m)
+	| "Quartierstrasse"      // Neighborhood road (6m)
+	| "Wohnstrasse"          // Residential street (5m)
+	| "Fussweg"              // Footpath (3m)
+	| "Fussgaengerzone"      // Pedestrian zone (4m)
+	| string;                // Allow other types
+
+/** GeoJSON LineString geometry for streets */
+export interface LineStringGeometry {
+	type: "LineString";
+	coordinates: [number, number][];
+}
+
+/** GeoJSON Feature for a street segment */
+export interface StreetFeature {
+	type: "Feature";
+	properties: StreetProperties;
+	geometry: LineStringGeometry | MultiLineStringGeometry;
+}
+
+/** GeoJSON FeatureCollection for streets */
+export interface StreetCollection {
+	type: "FeatureCollection";
+	features: StreetFeature[];
+}
+
+// ============================================================================
+// GeoJSON Types for Water Bodies
+// ============================================================================
+
+/** Water body classification types */
+export type WaterType = "lake" | "river" | "stream" | "pond";
+
+/** Properties for a water body feature */
+export interface WaterProperties {
+	/** Unique water body identifier */
+	id: string;
+	/** Water body name (e.g., "Zürichsee", "Limmat") */
+	name: string;
+	/** Type of water body */
+	water_type: WaterType;
+	/** Width in meters (for rivers/streams) */
+	width: number;
+	/** Ground elevation in meters (optional) */
+	elevation?: number;
+}
+
+/** GeoJSON Feature for a water body */
+export interface WaterFeature {
+	type: "Feature";
+	properties: WaterProperties;
+	geometry:
+		| PolygonGeometry
+		| MultiPolygonGeometry
+		| LineStringGeometry
+		| MultiLineStringGeometry;
+}
+
+/** GeoJSON FeatureCollection for water bodies */
+export interface WaterCollection {
+	type: "FeatureCollection";
+	features: WaterFeature[];
+}
+
 // Re-export binary GTFS types
 export * from "./gtfs-binary";
+
+// Re-export roof types
+export * from "./roof";

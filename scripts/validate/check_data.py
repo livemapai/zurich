@@ -15,12 +15,26 @@ from typing import Optional
 import sys
 
 
-# Expected bounds for Zurich in WGS84 (from DATA_SOURCES.md)
+# Expected bounds for cities in WGS84 (from DATA_SOURCES.md)
 ZURICH_BOUNDS = {
     "min_lng": 8.448,
     "max_lng": 8.626,
     "min_lat": 47.320,
     "max_lat": 47.435
+}
+
+LUCERNE_BOUNDS = {
+    "min_lng": 8.20,
+    "max_lng": 8.45,
+    "min_lat": 46.95,
+    "max_lat": 47.10
+}
+
+# Map of city names to bounds
+CITY_BOUNDS = {
+    "zurich": ZURICH_BOUNDS,
+    "lucerne": LUCERNE_BOUNDS,
+    "luzern": LUCERNE_BOUNDS,  # German spelling
 }
 
 
@@ -197,6 +211,14 @@ def print_summary(filepath: Path, is_valid: bool, errors: list[ValidationError])
     print(f"{'='*60}\n")
 
 
+def get_bounds_for_file(filepath: Path) -> dict:
+    """Determine appropriate bounds based on file path."""
+    name = filepath.name.lower()
+    if "lucerne" in name or "luzern" in name:
+        return LUCERNE_BOUNDS
+    return ZURICH_BOUNDS
+
+
 def main():
     import argparse
 
@@ -213,12 +235,26 @@ def main():
         help="Number of features to sample (0 = all)"
     )
     parser.add_argument(
+        "--bounds", "-b",
+        choices=["zurich", "lucerne", "auto"],
+        default="auto",
+        help="City bounds to validate against (default: auto-detect from filename)"
+    )
+    parser.add_argument(
         "--strict",
         action="store_true",
         help="Exit with error code if validation fails"
     )
 
     args = parser.parse_args()
+
+    # Determine bounds
+    if args.bounds == "auto":
+        bounds = get_bounds_for_file(args.file)
+    else:
+        bounds = CITY_BOUNDS.get(args.bounds, ZURICH_BOUNDS)
+
+    print(f"Using bounds: {args.bounds if args.bounds != 'auto' else 'auto-detected'}")
 
     is_valid, errors = validate_geojson(args.file, args.sample)
     print_summary(args.file, is_valid, errors)

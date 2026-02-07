@@ -1,0 +1,17 @@
+{
+  "approach_id": 3,
+  "approach_name": "pre_stitch_2x2",
+  "elapsed_seconds": 57.69908094406128,
+  "api_calls": 6,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 23.517770767211914,
+    "horizontal_score": 25.1494140625,
+    "vertical_score": 21.682170867919922,
+    "worst_seam": {
+      "tiles": "K-L",
+      "type": "horizontal",
+      "mean_diff": 40.93684768676758
+    }
+  }
+}

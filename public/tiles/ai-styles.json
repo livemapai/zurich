@@ -64,6 +64,27 @@
       "generator": "gemini"
     },
     {
+      "name": "hybrid-isometric",
+      "displayName": "Isometric 3D (Blender)",
+      "description": "Factorio-style tilted view with geographic accuracy",
+      "colors": [
+        "#228B22",
+        "#A0522D",
+        "#87CEEB"
+      ],
+      "tiles": 63,
+      "totalTiles": 64,
+      "bounds": [
+        8.525391,
+        47.361153,
+        8.563843,
+        47.387193
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-04T22:40:44.065908",
+      "generator": "blender-hybrid"
+    },
+    {
       "name": "hybrid-isometric_golden",
       "displayName": "Isometric Golden Hour (Blender)",
       "description": "Dramatic isometric view with golden hour lighting",
@@ -75,10 +96,10 @@
       "tiles": 12,
       "totalTiles": 12,
       "bounds": [
-        8.535,
-        47.37,
-        8.548,
-        47.378
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
       ],
       "zoom": 16,
       "generatedAt": "2026-02-04T16:50:27.294862",
@@ -96,14 +117,732 @@
       "tiles": 12,
       "totalTiles": 12,
       "bounds": [
-        8.535,
-        47.37,
-        8.548,
-        47.378
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
       ],
       "zoom": 16,
       "generatedAt": "2026-02-04T16:56:36.564715",
       "generator": "blender-hybrid"
+    },
+    {
+      "name": "hybrid-textured",
+      "displayName": "Textured (AI Generated)",
+      "description": "Buildings with AI-generated textures from satellite imagery analysis",
+      "colors": [
+        "#D4C4B0",
+        "#8B7355",
+        "#A0522D"
+      ],
+      "tiles": 1,
+      "totalTiles": 36,
+      "bounds": [
+        8.536377,
+        47.372315,
+        8.54187,
+        47.376035
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T00:00:00.000000",
+      "generator": "blender-hybrid"
+    },
+    {
+      "name": "nano-cyberpunk",
+      "displayName": "Cyberpunk (Nano)",
+      "description": "Neon-lit night city with glowing rooftops and wet streets",
+      "colors": [
+        "#FF00FF",
+        "#00FFFF",
+        "#1a0a2e"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T01:29:49.879424",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "nano-winter",
+      "displayName": "Winter (Nano)",
+      "description": "Snow-covered cityscape with frosted trees and cold blue shadows",
+      "colors": [
+        "#FFFFFF",
+        "#E8F0F8",
+        "#B8C8D8"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T01:35:07.600949",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "nano-winter-stitched",
+      "displayName": "Nano Winter Stitched",
+      "description": "Winter snow scene: white snow-covered rooftops, gray icy streets, snow-dusted trees, cold blue shado",
+      "colors": [
+        "#FFFFFF",
+        "#87CEEB",
+        "#4169E1"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T01:47:05.687797",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "nano-winter-stitched-v2",
+      "displayName": "Nano Winter Stitched V2",
+      "description": "Winter snow scene: white snow-covered rooftops, gray icy streets, snow-dusted trees, cold blue shado",
+      "colors": [
+        "#FFFFFF",
+        "#87CEEB",
+        "#4169E1"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T01:52:31.829638",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "nano-cyberpunk-v2",
+      "displayName": "Cyberpunk V2",
+      "description": "Neon-lit night city with glowing rooftops and wet streets",
+      "colors": [
+        "#FF00FF",
+        "#00FFFF",
+        "#1a0a2e"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T02:54:46.143965",
+      "generator": "nano-stitcher-v2"
+    },
+    {
+      "name": "pencil-styler",
+      "displayName": "Pencil Sketch (Styler)",
+      "description": "Architectural pencil sketch: Transform into detailed hand-drawn pencil illustration. Buildings with ",
+      "colors": [
+        "#2B2B2B",
+        "#FFFFFF",
+        "#808080"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:03:30.664585",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "pencil-stitcher",
+      "displayName": "Pencil Sketch (Stitcher v1)",
+      "description": "Architectural pencil sketch: Transform into detailed hand-drawn pencil illustration. Buildings with ",
+      "colors": [
+        "#2B2B2B",
+        "#FFFFFF",
+        "#808080"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:03:33.155875",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "pencil-v2",
+      "displayName": "Pencil Sketch (V2)",
+      "description": "Architectural pencil sketch: Transform into detailed hand-drawn pencil illustration. Buildings with ",
+      "colors": [
+        "#2B2B2B",
+        "#FFFFFF",
+        "#808080"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837891,
+        47.3686943452,
+        8.5527564453,
+        47.379754384
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:05:30.873582",
+      "generator": "nano-stitcher-v2"
+    },
+    {
+      "name": "pencil-artistic",
+      "displayName": "Pencil Artistic",
+      "description": "Hand-drawn pencil artwork with depth, shadows, and artistic strokes",
+      "colors": [
+        "#2B2B2B",
+        "#FFFFFF",
+        "#808080"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:25:07.815445",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "pencil-deep-styler",
+      "displayName": "Pencil Deep (Styler)",
+      "description": "Rich hand-drawn pencil with deep shadows and 3D depth",
+      "colors": [
+        "#1a1a1a",
+        "#FFFFFF",
+        "#4a4a4a"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:29:41.197288",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "pencil-deep-stitcher",
+      "displayName": "Pencil Deep (Stitcher)",
+      "description": "Rich hand-drawn pencil with deep shadows - context-aware stitched",
+      "colors": [
+        "#1a1a1a",
+        "#FFFFFF",
+        "#4a4a4a"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:31:31.356564",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "pencil-deep-v2",
+      "displayName": "Pencil Deep V2 (Streets)",
+      "description": "Deep pencil with emphasized streets - iterative refinement",
+      "colors": [
+        "#1a1a1a",
+        "#FFFFFF",
+        "#4a4a4a"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:36:42.946648",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "pencil-master",
+      "displayName": "Pencil Master",
+      "description": "Master artist pencil sketch with deep shadows and hand-drawn soul",
+      "colors": [
+        "#1a1a1a",
+        "#FFFFFF",
+        "#505050"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:40:40.126199",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "pencil-master-stitcher",
+      "displayName": "Pencil Master (Stitcher)",
+      "description": "Master artist pencil with context-aware stitching",
+      "colors": [
+        "#1a1a1a",
+        "#FFFFFF",
+        "#505050"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:49:41.493981",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "pencil-master-ref",
+      "displayName": "Pencil Master (Reference)",
+      "description": "Master artist pencil - first tile sets style for all",
+      "colors": [
+        "#1a1a1a",
+        "#FFFFFF",
+        "#505050"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400815
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:57:49.651620",
+      "generator": "nano-banana-ref"
+    },
+    {
+      "name": "watercolor-from-pencil",
+      "displayName": "Watercolor (from Pencil)",
+      "description": "Watercolor painting transformation of pencil sketch",
+      "colors": [
+        "#7CB9E8",
+        "#90EE90",
+        "#FFB6C1"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:54:33.178751",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "photo-from-pencil",
+      "displayName": "Photorealistic (from Pencil)",
+      "description": "Photorealistic transformation of pencil sketch",
+      "colors": [
+        "#4a6741",
+        "#8B7355",
+        "#87CEEB"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T03:54:33.374772",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "watercolor-zurich",
+      "displayName": "Watercolor Zurich",
+      "description": "Soft watercolor painting of Zurich",
+      "colors": [
+        "#7CB9E8",
+        "#98D8AA",
+        "#F4A460"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T04:08:43.643779",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "colored-pencil-zurich",
+      "displayName": "Colored Pencil Zurich",
+      "description": "Hand-colored pencil drawing on paper",
+      "colors": [
+        "#E07050",
+        "#5D9B5D",
+        "#6495ED"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T04:08:46.995364",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "photo-zurich",
+      "displayName": "Photorealistic Zurich",
+      "description": "Realistic aerial photograph style",
+      "colors": [
+        "#4A5D4A",
+        "#8B7355",
+        "#505050"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T04:08:50.377059",
+      "generator": "nano-banana"
+    },
+    {
+      "name": "colored-pencil-stitcher",
+      "displayName": "Colored Pencil (Stitcher)",
+      "description": "Hand-colored pencil drawing - context stitched",
+      "colors": [
+        "#E07050",
+        "#5D9B5D",
+        "#6495ED"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T04:12:13.379722",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "watercolor-stitcher",
+      "displayName": "Watercolor (Stitcher)",
+      "description": "Soft watercolor painting - context stitched",
+      "colors": [
+        "#7CB9E8",
+        "#98D8AA",
+        "#F4A460"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T04:12:20.391191",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "photo-stitcher",
+      "displayName": "Photorealistic (Stitcher)",
+      "description": "Realistic aerial photograph - context stitched",
+      "colors": [
+        "#4A5D4A",
+        "#8B7355",
+        "#505050"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T04:12:21.797711",
+      "generator": "nano-stitcher"
+    },
+    {
+      "name": "architect-pencil-v1",
+      "displayName": "Architect Pencil",
+      "description": "Hand-drawn architectural pencil sketch with depth and cross-hatching",
+      "colors": [
+        "#2C2C2C",
+        "#8B8B8B",
+        "#F5F5DC"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T11:36:59.231736",
+      "generator": "nano-banana-gemini"
+    },
+    {
+      "name": "artist-handdrawn-gemini",
+      "displayName": "Artist Handdrawn (Gemini)",
+      "description": "Hand-drawn artistic city map with beautiful depth, dramatic shadows, and masterful craftsmanship",
+      "colors": [
+        "#3D2914",
+        "#6B4423",
+        "#8B6914",
+        "#2C1810",
+        "#F5E6D3"
+      ],
+      "tiles": 63,
+      "totalTiles": 63,
+      "bounds": [
+        8.525390625,
+        47.35743194458702,
+        8.5693359375,
+        47.387193097780425
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T11:54:58.625729",
+      "generator": "nano-banana-gemini"
+    },
+    {
+      "name": "artist-handdrawn-openai",
+      "displayName": "Artist Handdrawn (OpenAI)",
+      "description": "Hand-drawn artistic city map with beautiful depth, dramatic shadows, and masterful craftsmanship",
+      "colors": [
+        "#3D2914",
+        "#6B4423",
+        "#8B6914",
+        "#2C1810",
+        "#F5E6D3"
+      ],
+      "tiles": 63,
+      "totalTiles": 63,
+      "bounds": [
+        8.525390625,
+        47.35743194458702,
+        8.5693359375,
+        47.387193097780425
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T12:28:52.208643",
+      "generator": "nano-banana-openai"
+    },
+    {
+      "name": "pencil-artistic-v2",
+      "displayName": "Pencil Artistic V2",
+      "description": "Transform into a detailed architectural pencil sketch drawing, as if hand-drawn by a master architec",
+      "colors": [
+        "#2C3E50",
+        "#34495E",
+        "#7F8C8D"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T14:22:46.080506",
+      "generator": "pre-stitch-2x2"
+    },
+    {
+      "name": "pencil-styled-gemini",
+      "displayName": "Pencil Styled Gemini",
+      "description": "architectural pencil sketch with warm cream paper, consistent graphite lines",
+      "colors": [
+        "#2C3E50",
+        "#34495E",
+        "#7F8C8D"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T16:26:27.908906",
+      "generator": "pre-stitch-2x2"
+    },
+    {
+      "name": "pencil-styled-openai",
+      "displayName": "Pencil Styled Openai",
+      "description": "architectural pencil sketch with warm cream paper, consistent graphite lines",
+      "colors": [
+        "#2C3E50",
+        "#34495E",
+        "#7F8C8D"
+      ],
+      "tiles": 0,
+      "totalTiles": 0,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T16:26:36.778751",
+      "generator": "pre-stitch-2x2"
+    },
+    {
+      "name": "pencil-deep-gemini",
+      "displayName": "Pencil Deep (Gemini)",
+      "description": "Hand-drawn architectural pencil with deep 3D effect",
+      "colors": [
+        "#2C2C2C",
+        "#8B7355",
+        "#4A7C59"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T19:33:28.236440",
+      "generator": "nano-banana-gemini"
+    },
+    {
+      "name": "pencil-deep-openai",
+      "displayName": "Pencil Deep (OpenAI)",
+      "description": "Hand-drawn architectural pencil with deep 3D effect",
+      "colors": [
+        "#2C2C2C",
+        "#8B7355",
+        "#4A7C59"
+      ],
+      "tiles": 0,
+      "totalTiles": 0,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T19:35:10.381780",
+      "generator": "nano-banana-openai"
+    },
+    {
+      "name": "pencil-bw-precise",
+      "displayName": "Pencil B&W Precise",
+      "description": "Black & white architectural pencil, consistent style",
+      "colors": [
+        "#000000",
+        "#FFFFFF",
+        "#666666"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T19:38:29.439857",
+      "generator": "nano-banana-gemini"
+    },
+    {
+      "name": "pencil-bw-openai",
+      "displayName": "Pencil B&W (OpenAI)",
+      "description": "Black & white architectural pencil, OpenAI",
+      "colors": [
+        "#000000",
+        "#FFFFFF",
+        "#666666"
+      ],
+      "tiles": 12,
+      "totalTiles": 12,
+      "bounds": [
+        8.5308837890625,
+        47.368594345213374,
+        8.5528564453125,
+        47.37975438400816
+      ],
+      "zoom": 16,
+      "generatedAt": "2026-02-05T19:51:51.643912",
+      "generator": "nano-banana-openai"
     }
   ],
   "satellite": {
@@ -118,7 +857,7 @@
     "url": "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{y}.jpeg",
     "tileSize": 256
   },
-  "generatedAt": "2026-02-04T16:56:36.564774",
+  "generatedAt": "2026-02-05T19:51:51.643921",
   "defaultBounds": [
     8.53,
     47.365,

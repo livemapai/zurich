@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task 7: TileJSON Exploration - MapLibre Workshop</title>
+
+  <!-- MapLibre -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../assets/styles.css">
+
+  <style>
+    /* TileJSON Explorer specific layout */
+    .tilejson-layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    .tilejson-sidebar {
+      width: 400px;
+      padding: 1.5rem;
+      background: var(--color-bg-surface);
+      overflow-y: auto;
+      border-right: 1px solid var(--color-border);
+    }
+
+    .tilejson-main {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .source-selector {
+      margin-bottom: 1rem;
+    }
+
+    .source-selector select {
+      width: 100%;
+      padding: 0.75rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+    }
+
+    .source-selector select option {
+      background: var(--color-bg-surface);
+    }
+
+    .tilejson-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tilejson-card h3 {
+      margin: 0 0 1rem;
+      color: var(--color-primary);
+      font-size: 1rem;
+      font-family: var(--font-heading);
+    }
+
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .metadata-item {
+      background: rgba(0,0,0,0.2);
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .metadata-item .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.05em;
+    }
+
+    .metadata-item .value {
+      font-size: 0.9rem;
+      color: var(--color-text);
+      font-family: var(--font-mono);
+    }
+
+    .layer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .layer-item {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .layer-item:hover {
+      background: rgba(217, 119, 6, 0.1);
+      border-color: rgba(217, 119, 6, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .layer-item.expanded {
+      background: rgba(217, 119, 6, 0.1);
+      border-color: var(--color-primary);
+    }
+
+    .layer-item .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .layer-item .name {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .layer-item .expand-icon {
+      color: var(--color-text-muted);
+      transition: transform 0.2s;
+    }
+
+    .layer-item.expanded .expand-icon {
+      transform: rotate(90deg);
+    }
+
+    .layer-item .description {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .layer-fields {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-border);
+      display: none;
+    }
+
+    .layer-item.expanded .layer-fields {
+      display: block;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.375rem 0;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .field-row:last-child {
+      border-bottom: none;
+    }
+
+    .field-name {
+      color: var(--color-accent);
+      font-family: var(--font-mono);
+    }
+
+    .field-type {
+      color: var(--color-primary);
+      font-family: var(--font-mono);
+    }
+
+    .style-template {
+      margin-top: 1rem;
+    }
+
+    .style-template button {
+      padding: 0.5rem 1rem;
+      background: rgba(217, 119, 6, 0.2);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius-sm);
+      color: var(--color-primary);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .style-template button:hover {
+      background: rgba(217, 119, 6, 0.3);
+    }
+
+    .raw-json {
+      margin-top: 1rem;
+    }
+
+    .raw-json button {
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .raw-json button:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .raw-json pre {
+      margin-top: 0.5rem;
+      max-height: 300px;
+      overflow: auto;
+      display: none;
+      background: rgba(0,0,0,0.3);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+    }
+
+    .raw-json.show pre {
+      display: block;
+    }
+
+    .loading {
+      color: var(--color-text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+      .tilejson-layout {
+        flex-direction: column;
+      }
+      .tilejson-sidebar {
+        width: 100%;
+        max-height: 40vh;
+        order: 1;
+      }
+      .tilejson-main {
+        order: 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="tilejson-layout">
+    <aside class="tilejson-sidebar">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge">Task 7 of 7</span>
+      <h1>TileJSON: Tile Metadata</h1>
+
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>Understand TileJSON - the metadata format that describes vector tile sources, their layers, fields, and zoom ranges.</p>
+      </div>
+
+      <h2>What is TileJSON?</h2>
+      <p>TileJSON is a <strong>specification</strong> for describing tilesets. It tells clients:</p>
+      <ul>
+        <li>Where to fetch tiles (URL template)</li>
+        <li>What layers exist in the tiles</li>
+        <li>What fields/properties are available</li>
+        <li>Valid zoom range (min/max)</li>
+        <li>Geographic bounds and center</li>
+      </ul>
+
+      <h2>Why It Matters</h2>
+      <p>Without TileJSON, you'd have to <strong>guess</strong> what's in a tileset! TileJSON enables:</p>
+      <ul>
+        <li>Auto-discovery of available layers</li>
+        <li>Style editors (like Maputnik) to show field names</li>
+        <li>Validation that your style matches the data</li>
+        <li>Documentation for tileset users</li>
+      </ul>
+
+      <h2>TileJSON Structure</h2>
+      <div class="code-block" data-language="JSON">
+        <pre><code>{
+  "tilejson": "3.0.0",
+  "tiles": ["https://.../{z}/{x}/{y}.pbf"],
+  "vector_layers": [
+    {
+      "id": "building",
+      "fields": {
+        "height": "Number",
+        "type": "String"
+      },
+      "minzoom": 13,
+      "maxzoom": 14
+    }
+  ],
+  "bounds": [-180, -85, 180, 85],
+  "center": [8.54, 47.37, 10],
+  "minzoom": 0,
+  "maxzoom": 14
+}</code></pre>
+      </div>
+
+      <h2>Hands-On Exercise</h2>
+      <ol>
+        <li>Select a TileJSON source from the dropdown</li>
+        <li>Explore the metadata and layers</li>
+        <li>Click a layer to see its fields</li>
+        <li>Generate a style layer template</li>
+      </ol>
+
+      <div class="hint-box">
+        <strong>Try This:</strong> Click "Generate Style Template" for any layer - it creates valid MapLibre style JSON you can copy into your own style!
+      </div>
+
+      <div class="success-box">
+        <strong>Success Criteria:</strong> You can explain what TileJSON is, why it's useful, and can use it to discover what data a tileset contains.
+      </div>
+
+      <div class="nav-links">
+        <a href="06-mvt-inspect.html">&larr; Previous: MVT Inspection</a>
+        <a href="../capstone/index.html">Next: Capstone &rarr;</a>
+      </div>
+    </aside>
+
+    <div class="tilejson-main">
+      <div class="source-selector">
+        <select id="sourceSelect">
+          <option value="https://demotiles.maplibre.org/tiles/tiles.json">MapLibre Demo Tiles</option>
+          <option value="https://api.maptiler.com/tiles/v3/tiles.json?key=get_your_own_key">MapTiler v3 (needs API key)</option>
+          <option value="custom">Enter custom URL...</option>
+        </select>
+      </div>
+
+      <div id="customUrlInput" style="display: none; margin-bottom: 1rem;">
+        <input type="text" id="customUrl" placeholder="https://your-server.com/tiles.json"
+               style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3);
+                      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+                      color: var(--color-text); font-size: 0.9rem;">
+        <button onclick="loadCustomUrl()" class="btn btn-primary" style="margin-top: 0.5rem;">Load</button>
+      </div>
+
+      <div id="tilejsonContent">
+        <p class="loading">Loading TileJSON...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../assets/workshop.js"></script>
+
+  <!-- TileJSON Explorer Logic -->
+  <script>
+    let currentTileJSON = null;
+    let expandedLayers = new Set();
+
+    // Load TileJSON from URL
+    async function loadTileJSON(url) {
+      const content = document.getElementById('tilejsonContent');
+      content.innerHTML = '<p class="loading">Loading TileJSON...</p>';
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        currentTileJSON = await response.json();
+        expandedLayers.clear();
+        renderTileJSON();
+
+      } catch (error) {
+        content.innerHTML = `
+          <p style="color: var(--color-error);">Error loading TileJSON: ${error.message}</p>
+          <p style="color: var(--color-text-muted); font-size: 0.85rem;">
+            Make sure the URL is correct and supports CORS.
+          </p>
+        `;
+      }
+    }
+
+    // Render TileJSON content
+    function renderTileJSON() {
+      const content = document.getElementById('tilejsonContent');
+      const tj = currentTileJSON;
+
+      if (!tj) {
+        content.innerHTML = '<p class="loading">No TileJSON loaded</p>';
+        return;
+      }
+
+      let html = `
+        <div class="tilejson-card">
+          <h3>Tileset Metadata</h3>
+
+          <div class="metadata-grid">
+            <div class="metadata-item">
+              <div class="label">TileJSON Version</div>
+              <div class="value">${tj.tilejson || 'unknown'}</div>
+            </div>
+            <div class="metadata-item">
+              <div class="label">Name</div>
+              <div class="value">${tj.name || '(unnamed)'}</div>
+            </div>
+            <div class="metadata-item">
+              <div class="label">Zoom Range</div>
+              <div class="value">${tj.minzoom ?? 0} - ${tj.maxzoom ?? 22}</div>
+            </div>
+            <div class="metadata-item">
+              <div class="label">Format</div>
+              <div class="value">${tj.format || 'pbf'}</div>
+            </div>
+          </div>
+
+          ${tj.description ? `<p style="font-size: 0.85rem; color: var(--color-text-muted);">${tj.description}</p>` : ''}
+
+          ${tj.bounds ? `
+            <div class="metadata-item" style="margin-top: 0.75rem;">
+              <div class="label">Bounds</div>
+              <div class="value" style="font-size: 0.8rem;">
+                [${tj.bounds.map(b => b.toFixed(2)).join(', ')}]
+              </div>
+            </div>
+          ` : ''}
+
+          ${tj.center ? `
+            <div class="metadata-item" style="margin-top: 0.75rem;">
+              <div class="label">Center</div>
+              <div class="value" style="font-size: 0.8rem;">
+                [${tj.center.map(c => typeof c === 'number' ? c.toFixed(4) : c).join(', ')}]
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="raw-json" id="rawJson">
+            <button onclick="toggleRawJson()">Show Raw JSON</button>
+            <pre><code>${JSON.stringify(tj, null, 2)}</code></pre>
+          </div>
+        </div>
+
+        <div class="tilejson-card">
+          <h3>Vector Layers (${tj.vector_layers?.length || 0})</h3>
+          <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+            Click a layer to see its fields and generate style templates.
+          </p>
+
+          <div class="layer-list">
+            ${(tj.vector_layers || []).map((layer, i) => `
+              <div class="layer-item ${expandedLayers.has(i) ? 'expanded' : ''}"
+                   onclick="toggleLayer(${i})">
+                <div class="header">
+                  <span class="name">${layer.id}</span>
+                  <span class="expand-icon">▶</span>
+                </div>
+                ${layer.description ? `<div class="description">${layer.description}</div>` : ''}
+                <div class="description">
+                  Zoom: ${layer.minzoom ?? tj.minzoom ?? 0} - ${layer.maxzoom ?? tj.maxzoom ?? 22}
+                  ${layer.fields ? ` • ${Object.keys(layer.fields).length} fields` : ''}
+                </div>
+
+                <div class="layer-fields">
+                  ${layer.fields ? `
+                    <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 0.5rem;">
+                      Available Fields:
+                    </div>
+                    ${Object.entries(layer.fields).map(([name, type]) => `
+                      <div class="field-row">
+                        <span class="field-name">${name}</span>
+                        <span class="field-type">${type}</span>
+                      </div>
+                    `).join('')}
+                  ` : '<p style="font-size: 0.8rem; color: var(--color-text-muted);">No field information available</p>'}
+
+                  <div class="style-template">
+                    <button onclick="event.stopPropagation(); generateStyleTemplate('${layer.id}')">
+                      Generate Style Template
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      content.innerHTML = html;
+    }
+
+    // Toggle layer expansion
+    window.toggleLayer = function(index) {
+      if (expandedLayers.has(index)) {
+        expandedLayers.delete(index);
+      } else {
+        expandedLayers.add(index);
+      }
+      renderTileJSON();
+    };
+
+    // Toggle raw JSON display
+    window.toggleRawJson = function() {
+      const el = document.getElementById('rawJson');
+      el.classList.toggle('show');
+      el.querySelector('button').textContent =
+        el.classList.contains('show') ? 'Hide Raw JSON' : 'Show Raw JSON';
+    };
+
+    // Generate style template
+    window.generateStyleTemplate = function(layerId) {
+      const layer = currentTileJSON.vector_layers?.find(l => l.id === layerId);
+      if (!layer) return;
+
+      let layerType = 'fill';
+      const id = layerId.toLowerCase();
+      if (id.includes('road') || id.includes('path') || id.includes('line') || id.includes('boundary')) {
+        layerType = 'line';
+      } else if (id.includes('point') || id.includes('poi') || id.includes('label') || id.includes('place')) {
+        layerType = 'symbol';
+      }
+
+      const template = {
+        id: `${layerId}-layer`,
+        type: layerType,
+        source: 'YOUR_SOURCE_NAME',
+        'source-layer': layerId,
+        paint: layerType === 'fill' ? {
+          'fill-color': '#d97706',
+          'fill-opacity': 0.8
+        } : layerType === 'line' ? {
+          'line-color': '#0ea5e9',
+          'line-width': 2
+        } : {},
+        layout: layerType === 'symbol' ? {
+          'text-field': ['get', Object.keys(layer.fields || {})[0] || 'name'],
+          'text-size': 12
+        } : {}
+      };
+
+      if (Object.keys(template.layout).length === 0) delete template.layout;
+
+      const json = JSON.stringify(template, null, 2);
+
+      navigator.clipboard.writeText(json).then(() => {
+        alert('Style template copied to clipboard!\n\nPaste it into your MapLibre style layers array.');
+      }).catch(() => {
+        prompt('Copy this style template:', json);
+      });
+
+      console.log('%cGenerated style template for layer:', 'color: #22c55e; font-weight: bold', layerId);
+      console.log(template);
+    };
+
+    // Source selector change
+    document.getElementById('sourceSelect').addEventListener('change', (e) => {
+      const customInput = document.getElementById('customUrlInput');
+      if (e.target.value === 'custom') {
+        customInput.style.display = 'block';
+      } else {
+        customInput.style.display = 'none';
+        loadTileJSON(e.target.value);
+      }
+    });
+
+    // Load custom URL
+    window.loadCustomUrl = function() {
+      const url = document.getElementById('customUrl').value.trim();
+      if (url) {
+        loadTileJSON(url);
+      }
+    };
+
+    // Initial load
+    loadTileJSON(document.getElementById('sourceSelect').value);
+
+    // Console logging
+    console.log('%c=== TileJSON Explorer Workshop ===', 'color: #d97706; font-size: 16px; font-weight: bold');
+    console.log('%cDiscover what\'s in your vector tiles!', 'color: #0ea5e9');
+    console.log('TileJSON describes layers, fields, and metadata.');
+  </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+{
+  "building_wall_color": [
+    0.85,
+    0.82,
+    0.78
+  ],
+  "building_roof_color": [
+    0.45,
+    0.38,
+    0.32
+  ],
+  "building_emission": 0.0,
+  "building_roughness": 0.8,
+  "tree_foliage_color": [
+    0.85,
+    0.5,
+    0.2
+  ],
+  "tree_trunk_color": [
+    0.35,
+    0.25,
+    0.18
+  ],
+  "tree_color_variation": 0.1,
+  "ground_color": [
+    0.35,
+    0.5,
+    0.25
+  ],
+  "terrain_color": [
+    0.45,
+    0.42,
+    0.38
+  ],
+  "street_color": [
+    0.35,
+    0.35,
+    0.38
+  ],
+  "street_wetness": 0.0,
+  "sun_azimuth": 225.0,
+  "sun_altitude": 35.0,
+  "sun_color": [
+    1.0,
+    0.98,
+    0.95
+  ],
+  "sun_strength": 3.0,
+  "ambient_color": [
+    0.7,
+    0.8,
+    1.0
+  ],
+  "ambient_strength": 0.3,
+  "sky_color": [
+    0.7,
+    0.8,
+    1.0
+  ],
+  "fog_density": 0.0,
+  "saturation": 1.15,
+  "contrast": 1.0,
+  "temperature_shift": 0.2,
+  "brightness": 1.0,
+  "snow_coverage": 0.0,
+  "rain_intensity": 0.0,
+  "neon_glow": false,
+  "style_prompt": "autumn",
+  "seed": 42
+}

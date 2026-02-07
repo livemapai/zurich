@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task 5: Planetiler - MapLibre Workshop</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body>
+  <div class="instructions-layout">
+    <div class="instructions-container">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge">Task 5 of 7</span>
+      <h1>Planetiler: Generate Vector Tiles</h1>
+
+      <p>
+        <strong>Planetiler</strong> (formerly "Flatmap") is a blazing-fast tool that generates
+        vector tiles from OpenStreetMap data. It can process the entire planet in under an hour!
+      </p>
+
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0;">
+        <a href="https://github.com/onthegomap/planetiler" target="_blank" class="btn btn-primary">
+          Planetiler GitHub &rarr;
+        </a>
+        <a href="https://github.com/onthegomap/planetiler-examples" target="_blank" class="btn btn-secondary">
+          Examples Repo &rarr;
+        </a>
+      </div>
+
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>
+          Understand how raw OpenStreetMap data becomes vector tiles, completing the
+          "source to browser" journey.
+        </p>
+      </div>
+
+      <h2>The Tile Generation Pipeline</h2>
+
+      <div class="code-block" data-language="Architecture">
+        <pre><code>OSM PBF File ─────────────────────────────────────────────────────┐
+(switzerland.osm.pbf)                                               │
+                                                                    ▼
+                                                          ┌────────────────┐
+                                                          │ PLANETILER     │
+                                                          │ • Parse OSM    │
+                                                          │ • Filter tags  │
+                                                          │ • Tile geometry│
+                                                          │ • Encode MVT   │
+                                                          └────────────────┘
+                                                                    │
+                                                                    ▼
+                              ┌───────────────────────────────────────────────┐
+                              │ output.mbtiles or output.pmtiles              │
+                              │ Ready for serving or CDN!                     │
+                              └───────────────────────────────────────────────┘</code></pre>
+      </div>
+
+      <h2>Planetiler vs Tippecanoe</h2>
+
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h3>Planetiler</h3>
+          <ul>
+            <li>Optimized for <strong>OSM data</strong></li>
+            <li>Built-in profiles for basemaps</li>
+            <li>Very fast, Java-based</li>
+            <li>OpenMapTiles schema</li>
+          </ul>
+        </div>
+        <div class="comparison-card positive">
+          <h3>Tippecanoe</h3>
+          <ul>
+            <li>Works with <strong>any GeoJSON</strong></li>
+            <li>Great for custom data</li>
+            <li>More flexible options</li>
+            <li>Slower on large datasets</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>Prerequisites</h2>
+      <ul>
+        <li>Java 21+ installed (<code>java --version</code>)</li>
+        <li>~2GB RAM for small regions</li>
+        <li>OSM extract (<a href="https://download.geofabrik.de" target="_blank" style="color: var(--color-accent);">Geofabrik</a>)</li>
+      </ul>
+
+      <h2>Exercise: Generate Zurich Tiles</h2>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">1</span>
+          <h3>Download Planetiler</h3>
+        </div>
+        <div class="code-block" data-language="bash">
+          <pre><code># Download the latest release
+curl -L -o planetiler.jar \
+  https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar
+
+# Verify it works
+java -jar planetiler.jar --help</code></pre>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">2</span>
+          <h3>Download OSM Data</h3>
+        </div>
+        <div class="code-block" data-language="bash">
+          <pre><code># Download Switzerland extract (~400MB)
+curl -L -o switzerland.osm.pbf \
+  https://download.geofabrik.de/europe/switzerland-latest.osm.pbf
+
+# Or just Zurich canton (smaller, ~50MB)
+# You can also download from https://download.geofabrik.de/europe/switzerland.html</code></pre>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">3</span>
+          <h3>Generate Tiles (OpenMapTiles schema)</h3>
+        </div>
+        <div class="code-block" data-language="bash">
+          <pre><code># Generate MBTiles with OpenMapTiles schema
+java -Xmx2g -jar planetiler.jar \
+  --download \
+  --area=switzerland \
+  --output=switzerland.mbtiles
+
+# This creates tiles compatible with existing OpenMapTiles styles!</code></pre>
+        </div>
+        <div class="hint-box">
+          <strong>What's happening?</strong> Planetiler reads OSM tags, applies the OpenMapTiles
+          profile (filtering roads, buildings, POIs, etc.), clips geometry to tiles, and encodes as MVT.
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">4</span>
+          <h3>Convert to PMTiles (optional)</h3>
+        </div>
+        <div class="code-block" data-language="bash">
+          <pre><code># Install pmtiles CLI
+npm install -g pmtiles
+# or: go install github.com/protomaps/go-pmtiles/cmd/pmtiles@latest
+
+# Convert to PMTiles for serverless hosting
+pmtiles convert switzerland.mbtiles switzerland.pmtiles</code></pre>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">5</span>
+          <h3>Serve and View</h3>
+        </div>
+        <div class="code-block" data-language="bash">
+          <pre><code># Option 1: Serve MBTiles with tileserver-gl
+npx tileserver-gl-light switzerland.mbtiles
+
+# Option 2: Serve PMTiles from any HTTP server
+npx http-server . --cors -p 8080
+# Then use pmtiles:// protocol in your map</code></pre>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>Processing Time:</strong> Switzerland takes ~5-10 minutes on a modern laptop.
+        The whole planet takes 30-60 minutes with 30GB RAM. Start with a small region!
+      </div>
+
+      <h2>What Happens During "Encode MVT"?</h2>
+      <p>
+        When Planetiler generates tiles, it performs several encoding steps that convert
+        human-readable data into compact binary format. Understanding this helps you
+        appreciate why vector tiles are so efficient.
+      </p>
+
+      <div class="step-card" style="background: rgba(var(--color-primary-rgb, 217, 119, 6), 0.1); border-color: var(--color-primary);">
+        <h3 style="color: var(--color-primary); margin: 0 0 1rem;">The MVT Encoding Pipeline</h3>
+        <div class="code-block" data-language="Pipeline">
+          <pre><code>1. GROUP features by layer name (building, road, water...)
+   Each layer becomes a separate container in the tile.
+
+2. DEDUPLICATE keys and values per layer:
+   - Collect all unique property names → keys[]
+   - Collect all unique property values → values[]
+   - Features reference by index (saves space!)
+
+   Example: 1000 buildings with "type": "residential"
+   → Store "type" once, "residential" once, reference by index
+
+3. TRANSFORM coordinates to tile extent (0-4096):
+   - World coordinates → tile-local integers
+   - Geometry commands: MoveTo(x,y), LineTo(dx,dy), ClosePath
+   - Delta-encode positions (store relative, not absolute)
+
+4. ZIGZAG encode signed integers:
+   -1 → 1, 1 → 2, -2 → 3, 2 → 4, ...
+   Small negatives become small positives → better compression
+
+5. SERIALIZE to Protobuf binary format:
+   Tile { layers: [ Layer { features: [...] } ] }
+   Output: compact .pbf file (typically 5-20KB per tile)</code></pre>
+        </div>
+      </div>
+
+      <div class="hint-box">
+        <strong>Why This Matters:</strong> A naive JSON encoding of the same data would be
+        3-10× larger. The deduplication and delta-encoding make vector tiles efficient
+        enough to load hundreds of tiles without overwhelming bandwidth.
+      </div>
+
+      <p>
+        <strong>Continue to Task 6</strong> to see the result of this encoding by
+        inspecting actual MVT binary data!
+      </p>
+
+      <h2>Custom Profiles</h2>
+      <p>
+        Planetiler supports custom profiles to control exactly what data goes into your tiles.
+        You can filter OSM tags, rename properties, set zoom levels, and more.
+      </p>
+
+      <div class="code-block" data-language="Java">
+        <pre><code>// Example custom profile (Java)
+public class MyProfile implements Profile {
+  @Override
+  public void processFeature(SourceFeature source, FeatureCollector features) {
+    if (source.hasTag("building")) {
+      features.polygon("buildings")
+        .setMinZoom(13)
+        .setAttr("height", source.getTag("height"))
+        .setAttr("type", source.getTag("building"));
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h2>Quick Reference: Shell Script</h2>
+      <div class="code-block" data-language="bash">
+        <pre><code>#!/bin/bash
+# run.sh - Generate tiles for a region
+
+REGION=${1:-switzerland}
+OUTPUT=${2:-output}
+
+# Download and generate tiles
+java -Xmx4g -jar planetiler.jar \
+  --download \
+  --area=$REGION \
+  --output=$OUTPUT.mbtiles \
+  --nodemap-type=array \
+  --storage=mmap
+
+# Convert to PMTiles
+pmtiles convert $OUTPUT.mbtiles $OUTPUT.pmtiles
+
+echo "Done! Output: $OUTPUT.pmtiles"</code></pre>
+      </div>
+
+      <div class="success-box">
+        <strong>Success Criteria:</strong> You've generated vector tiles from OSM data and
+        can serve them locally. You understand the role of profiles in tile generation.
+      </div>
+
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://github.com/onthegomap/planetiler" target="_blank" style="color: var(--color-accent);">Planetiler GitHub</a></li>
+        <li><a href="https://download.geofabrik.de" target="_blank" style="color: var(--color-accent);">Geofabrik OSM Downloads</a></li>
+        <li><a href="https://openmaptiles.org/schema/" target="_blank" style="color: var(--color-accent);">OpenMapTiles Schema</a></li>
+        <li><a href="https://github.com/mapbox/tippecanoe" target="_blank" style="color: var(--color-accent);">Tippecanoe (alternative)</a></li>
+      </ul>
+
+      <div class="nav-links">
+        <a href="../04-pmtiles.html">&larr; Previous: PMTiles</a>
+        <a href="../06-mvt-inspect.html">Next: MVT Inspection &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../../assets/workshop.js"></script>
+</body>
+</html>

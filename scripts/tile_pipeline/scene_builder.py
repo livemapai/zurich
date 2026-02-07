@@ -93,13 +93,59 @@ class SceneBounds:
         my = y + self.sw_mercator[1]
         return self._mercator_to_wgs84(mx, my)
 
+    def lv95_to_local(self, e: float, n: float) -> Tuple[float, float]:
+        """Convert Swiss LV95 (EPSG:2056) to local scene coordinates.
+
+        Uses pyproj for accurate transformation: LV95 → WGS84 → Web Mercator → local.
+        Falls back to approximate formula if pyproj unavailable.
+
+        Args:
+            e: Easting in LV95 meters
+            n: Northing in LV95 meters
+
+        Returns:
+            (x, y) in local scene coordinates
+        """
+        try:
+            from pyproj import Transformer
+            transformer = Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
+            lon, lat = transformer.transform(e, n)
+        except ImportError:
+            # Approximate conversion (good to ~10m for Zurich area)
+            # LV95 origin: E=2600000, N=1200000 at ~7.44°E, ~46.95°N
+            lon = (e - 2600000) / 75500 + 7.44
+            lat = (n - 1200000) / 111320 + 46.95
+
+        return self.wgs84_to_local(lon, lat)
+
+    def is_in_bounds_lv95(self, e: float, n: float, margin: float = 50.0) -> bool:
+        """Check if LV95 coordinate is within tile bounds (with margin).
+
+        Args:
+            e: Easting in LV95 meters
+            n: Northing in LV95 meters
+            margin: Extra margin in meters
+
+        Returns:
+            True if coordinate is within bounds
+        """
+        x, y = self.lv95_to_local(e, n)
+        return (
+            -margin < x < self.width_meters + margin and
+            -margin < y < self.height_meters + margin
+        )
+
 
 @dataclass
 class SceneStatistics:
     """Statistics about the built scene."""
 
     num_buildings: int = 0
+    num_lod2_buildings: int = 0  # LOD2 buildings loaded from OBJ
+    num_roof_faces: int = 0  # Individual roof faces from LOD2
     num_trees: int = 0
+    num_streets: int = 0
+    num_water_bodies: int = 0
     num_terrain_vertices: int = 0
     total_triangles: int = 0
     bounds_meters: Tuple[float, float, float, float, float, float] = (0, 0, 0, 0, 0, 0)
@@ -241,6 +287,179 @@ class SceneBuilder:
 
         return self
 
+    def add_lod2_buildings(
+        self,
+        obj_dir: str,
+        metadata_path: Optional[str] = None,
+        classify_faces: bool = True,
+    ) -> "SceneBuilder":
+        """Add LOD2 building meshes from OBJ files.
+
+        LOD2 buildings have actual roof geometry (gabled, hipped, flat) instead
+        of simple box extrusions. This method loads OBJ files in LV95 coordinates
+        and converts them to the local scene coordinate system.
+
+        Args:
+            obj_dir: Directory containing OBJ files (in LV95 coordinates)
+            metadata_path: Optional path to metadata.json with building bounds
+            classify_faces: If True, separate roof and wall meshes for texturing
+
+        Returns:
+            Self for method chaining
+        """
+        from pathlib import Path
+        import json
+
+        obj_path = Path(obj_dir)
+        if not obj_path.exists():
+            print(f"[LOD2] Warning: OBJ directory not found: {obj_dir}")
+            return self
+
+        # Load metadata if available (for faster bounds checking)
+        building_metadata = {}
+        if metadata_path:
+            meta_path = Path(metadata_path)
+            if meta_path.exists():
+                with open(meta_path) as f:
+                    data = json.load(f)
+                    for bldg in data.get("buildings", []):
+                        building_metadata[bldg["id"]] = bldg
+
+        # Find OBJ files
+        obj_files = list(obj_path.glob("*.obj"))
+        if not obj_files:
+            print(f"[LOD2] No OBJ files found in {obj_dir}")
+            return self
+
+        print(f"[LOD2] Processing {len(obj_files)} OBJ files...")
+        loaded_count = 0
+        skipped_count = 0
+
+        for obj_file in obj_files:
+            building_id = obj_file.stem
+
+            # Check if building is in tile bounds using metadata
+            if building_id in building_metadata:
+                bounds = building_metadata[building_id].get("bounds", {})
+                center_e = (bounds.get("min_e", 0) + bounds.get("max_e", 0)) / 2
+                center_n = (bounds.get("min_n", 0) + bounds.get("max_n", 0)) / 2
+
+                if not self.bounds.is_in_bounds_lv95(center_e, center_n):
+                    skipped_count += 1
+                    continue
+
+            # Load and transform OBJ mesh
+            mesh = self._load_lod2_obj(obj_file, classify_faces)
+            if mesh is not None:
+                if isinstance(mesh, tuple):
+                    # Separate roof and wall meshes
+                    roof_mesh, wall_mesh = mesh
+                    if roof_mesh is not None:
+                        self._meshes.append(roof_mesh)
+                        # Count faces for statistics
+                        self.stats.num_roof_faces += len(roof_mesh.faces)
+                    if wall_mesh is not None:
+                        self._meshes.append(wall_mesh)
+                else:
+                    self._meshes.append(mesh)
+                loaded_count += 1
+                self.stats.num_lod2_buildings += 1
+
+        print(f"[LOD2] Loaded {loaded_count} buildings, skipped {skipped_count} out of bounds")
+        return self
+
+    def _load_lod2_obj(
+        self,
+        obj_path,
+        classify_faces: bool = True,
+        roof_threshold: float = 0.3,
+    ) -> Optional[trimesh.Trimesh]:
+        """Load an OBJ file and convert from LV95 to local coordinates.
+
+        Args:
+            obj_path: Path to OBJ file
+            classify_faces: If True, separate roof from wall faces
+            roof_threshold: Normal.z threshold for roof classification
+
+        Returns:
+            Trimesh or tuple of (roof_mesh, wall_mesh) if classify_faces=True
+        """
+        try:
+            # Parse OBJ manually for coordinate control
+            vertices = []
+            faces = []
+
+            with open(obj_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+
+                    parts = line.split()
+                    if not parts:
+                        continue
+
+                    if parts[0] == 'v':
+                        # Vertex: v X Y Z where X=Easting, Y=Elevation, Z=-Northing
+                        # (Stadt Zürich LOD2 uses rotated coordinate system)
+                        obj_x, obj_y, obj_z = float(parts[1]), float(parts[2]), float(parts[3])
+                        # Convert to LV95: E=X, N=-Z, Elevation=Y
+                        e = obj_x
+                        n = -obj_z  # Invert Z to get Northing
+                        elev = obj_y
+                        # Convert to local scene coordinates
+                        x, y = self.bounds.lv95_to_local(e, n)
+                        vertices.append([x, y, elev])
+
+                    elif parts[0] == 'f':
+                        # Face: f v1 v2 v3 ... (1-indexed)
+                        face_verts = []
+                        for p in parts[1:]:
+                            v_idx = int(p.split('/')[0]) - 1
+                            face_verts.append(v_idx)
+                        if len(face_verts) >= 3:
+                            faces.append(face_verts)
+
+            if not vertices or not faces:
+                return None
+
+            vertices = np.array(vertices)
+            faces = np.array(faces) if all(len(f) == 3 for f in faces) else faces
+
+            # Create mesh
+            mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+
+            if not classify_faces:
+                return mesh
+
+            # Classify faces into roof and wall based on normal direction
+            mesh.fix_normals()
+            face_normals = mesh.face_normals
+
+            roof_faces = []
+            wall_faces = []
+
+            for i, normal in enumerate(face_normals):
+                if normal[2] > roof_threshold:
+                    roof_faces.append(i)
+                else:
+                    wall_faces.append(i)
+
+            # Create separate meshes
+            roof_mesh = None
+            wall_mesh = None
+
+            if roof_faces:
+                roof_mesh = mesh.submesh([roof_faces], append=True)
+            if wall_faces:
+                wall_mesh = mesh.submesh([wall_faces], append=True)
+
+            return (roof_mesh, wall_mesh)
+
+        except Exception as e:
+            # Skip invalid OBJ files silently
+            return None
+
     def add_trees(
         self,
         features: List[Feature],
@@ -342,6 +561,216 @@ class SceneBuilder:
             self._meshes.append(pole)
 
         return self
+
+    def add_streets(
+        self,
+        features: List[Feature],
+        default_width: float = 6.0,
+        elevation_offset: float = 0.05,
+    ) -> "SceneBuilder":
+        """Add street surfaces as flat polygons.
+
+        Streets are buffered from centerlines to create road polygons.
+        They are placed slightly above terrain to prevent z-fighting.
+
+        Args:
+            features: Street features with LineString geometry and width property
+            default_width: Default road width in meters if not specified
+            elevation_offset: Height above terrain in meters (0.05m = 5cm)
+
+        Returns:
+            Self for method chaining
+        """
+        from .geometry import buffer_line_to_polygon
+
+        for feature in features:
+            if feature.geometry_type not in ("LineString", "MultiLineString"):
+                continue
+
+            width = feature.height if feature.height > 0 else default_width
+            base_z = feature.properties.get("elevation", 0) + elevation_offset
+
+            # Handle LineString and MultiLineString
+            if feature.geometry_type == "LineString":
+                lines = [feature.coordinates]
+            else:
+                lines = feature.coordinates
+
+            for line_coords in lines:
+                # Convert to WGS84 tuples for buffering
+                wgs84_coords = [(c[0], c[1]) for c in line_coords]
+
+                # Buffer line to polygon
+                poly_coords = buffer_line_to_polygon(
+                    wgs84_coords,
+                    width_meters=width,
+                    cap_style="flat",
+                    latitude=self.bounds.lat_center,
+                )
+
+                if poly_coords and len(poly_coords) >= 3:
+                    mesh = self._create_flat_polygon(poly_coords, base_z)
+                    if mesh is not None:
+                        self._meshes.append(mesh)
+                        self.stats.num_streets += 1
+
+        return self
+
+    def add_water_bodies(
+        self,
+        features: List[Feature],
+        default_river_width: float = 5.0,
+        elevation_offset: float = -0.1,
+    ) -> "SceneBuilder":
+        """Add water body surfaces as flat polygons.
+
+        Lakes/ponds: Use polygon directly
+        Rivers/streams: Buffer from centerline using width property
+
+        Water is placed slightly below terrain level.
+
+        Args:
+            features: Water features (Polygon for lakes, LineString for rivers)
+            default_river_width: Default width for rivers in meters
+            elevation_offset: Height relative to terrain (-0.1m = 10cm below)
+
+        Returns:
+            Self for method chaining
+        """
+        from .geometry import buffer_line_to_polygon
+
+        for feature in features:
+            base_z = feature.properties.get("elevation", 0) + elevation_offset
+
+            if feature.geometry_type == "Polygon":
+                # Lakes/ponds - use polygon directly
+                if len(feature.coordinates) > 0 and len(feature.coordinates[0]) >= 3:
+                    poly_coords = [(c[0], c[1]) for c in feature.coordinates[0]]
+                    mesh = self._create_flat_polygon(poly_coords, base_z)
+                    if mesh is not None:
+                        self._meshes.append(mesh)
+                        self.stats.num_water_bodies += 1
+
+            elif feature.geometry_type == "MultiPolygon":
+                # Multiple lake polygons
+                for polygon in feature.coordinates:
+                    if len(polygon) > 0 and len(polygon[0]) >= 3:
+                        poly_coords = [(c[0], c[1]) for c in polygon[0]]
+                        mesh = self._create_flat_polygon(poly_coords, base_z)
+                        if mesh is not None:
+                            self._meshes.append(mesh)
+                            self.stats.num_water_bodies += 1
+
+            elif feature.geometry_type == "LineString":
+                # Rivers/streams - buffer to polygon
+                width = feature.height if feature.height > 0 else default_river_width
+                wgs84_coords = [(c[0], c[1]) for c in feature.coordinates]
+
+                poly_coords = buffer_line_to_polygon(
+                    wgs84_coords,
+                    width_meters=width,
+                    cap_style="round",  # Round ends for natural river look
+                    latitude=self.bounds.lat_center,
+                )
+
+                if poly_coords and len(poly_coords) >= 3:
+                    mesh = self._create_flat_polygon(poly_coords, base_z)
+                    if mesh is not None:
+                        self._meshes.append(mesh)
+                        self.stats.num_water_bodies += 1
+
+            elif feature.geometry_type == "MultiLineString":
+                # Multiple river segments
+                width = feature.height if feature.height > 0 else default_river_width
+                for line_coords in feature.coordinates:
+                    wgs84_coords = [(c[0], c[1]) for c in line_coords]
+
+                    poly_coords = buffer_line_to_polygon(
+                        wgs84_coords,
+                        width_meters=width,
+                        cap_style="round",
+                        latitude=self.bounds.lat_center,
+                    )
+
+                    if poly_coords and len(poly_coords) >= 3:
+                        mesh = self._create_flat_polygon(poly_coords, base_z)
+                        if mesh is not None:
+                            self._meshes.append(mesh)
+                            self.stats.num_water_bodies += 1
+
+        return self
+
+    def _create_flat_polygon(
+        self,
+        wgs84_coords: List[Tuple[float, float]],
+        z: float = 0,
+    ) -> Optional[trimesh.Trimesh]:
+        """Create a flat polygon mesh from WGS84 coordinates.
+
+        Args:
+            wgs84_coords: List of (lon, lat) coordinates forming polygon
+            z: Z elevation in meters
+
+        Returns:
+            Trimesh object or None if invalid
+        """
+        if len(wgs84_coords) < 3:
+            return None
+
+        try:
+            from shapely.geometry import Polygon as ShapelyPolygon
+
+            # Convert to local coordinates
+            local_coords = np.array([
+                self.bounds.wgs84_to_local(lon, lat)
+                for lon, lat in wgs84_coords
+            ])
+
+            # Create Shapely polygon for triangulation
+            shapely_poly = ShapelyPolygon(local_coords)
+
+            if not shapely_poly.is_valid:
+                shapely_poly = shapely_poly.buffer(0)
+
+            if shapely_poly.is_empty:
+                return None
+
+            # Triangulate using trimesh
+            from shapely import get_coordinates
+            import triangle
+
+            # Get exterior coordinates
+            exterior = np.array(shapely_poly.exterior.coords[:-1])  # Remove closing point
+
+            if len(exterior) < 3:
+                return None
+
+            # Create simple triangulation
+            vertices = np.column_stack([exterior, np.full(len(exterior), z)])
+
+            # Use ear clipping for simple convex-ish polygons
+            # For complex polygons, use triangle library
+            try:
+                # Simple fan triangulation from centroid
+                centroid = exterior.mean(axis=0)
+                center_vertex = np.array([[centroid[0], centroid[1], z]])
+                vertices = np.vstack([vertices, center_vertex])
+                center_idx = len(vertices) - 1
+
+                faces = []
+                n = len(exterior)
+                for i in range(n):
+                    faces.append([i, (i + 1) % n, center_idx])
+                faces = np.array(faces)
+
+                mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+                return mesh
+
+            except Exception:
+                return None
+
+        except Exception:
+            return None
 
     def add_ground_plane(
         self,

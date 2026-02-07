@@ -1,0 +1,17 @@
+{
+  "approach_id": 6,
+  "approach_name": "pre_stitch_full_grid",
+  "elapsed_seconds": 9.4082350730896,
+  "api_calls": 1,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 8.246859550476074,
+    "horizontal_score": 6.6229023933410645,
+    "vertical_score": 10.073811531066895,
+    "worst_seam": {
+      "tiles": "E-I",
+      "type": "vertical",
+      "mean_diff": 12.8251953125
+    }
+  }
+}

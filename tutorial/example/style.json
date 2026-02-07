@@ -1,0 +1,48 @@
+{
+  "version": 8,
+  "id": "blank",
+  "sources": {
+    "raster-tiles": {
+      "type": "raster",
+      "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 19
+    },
+    "vector-tiles": {
+      "url": "https://demotiles.maplibre.org/tiles/tiles.json",
+      "type": "vector"
+    }
+  },
+  "layers": [
+    {
+      "id": "simple-tiles",
+      "type": "raster",
+      "source": "raster-tiles"
+    },
+    {
+      "id": "country-lines",
+      "type": "line",
+      "source": "vector-tiles",
+      "source-layer": "countries",
+      "paint": {
+        "line-color": "rgb(0, 0, 255)",
+        "line-width": 5
+      }
+    },
+    {
+      "id": "labels",
+      "type": "symbol",
+      "source": "vector-tiles",
+      "source-layer": "centroids",
+      "layout": {
+        "text-field": ["get", "NAME"],
+        "text-size": 24
+      },
+      "paint": {
+        "text-halo-color": "rgba(255, 255, 255, 1)",
+        "text-halo-width": 3
+      }
+    }
+  ]
+}

@@ -11,6 +11,9 @@ import { ViewerPage } from '@/pages/ViewerPage';
 import { GamePage } from '@/pages/GamePage';
 import { TransitPage } from '@/pages/TransitPage';
 import { StylesPage } from '@/pages/StylesPage';
+import { TilesPage } from '@/pages/TilesPage';
+import { PipelinePage } from '@/pages/PipelinePage';
+import { VectorPage } from '@/pages/VectorPage';
 
 function App() {
   return (
@@ -30,6 +33,15 @@ function App() {
 
         {/* AI Styles viewer mode */}
         <Route path="/styles" element={<StylesPage />} />
+
+        {/* Tile gallery mode */}
+        <Route path="/tiles" element={<TilesPage />} />
+
+        {/* Pipeline education mode */}
+        <Route path="/pipeline" element={<PipelinePage />} />
+
+        {/* Vector tiles viewer mode */}
+        <Route path="/vector" element={<VectorPage />} />
 
         {/* Fallback for unknown routes */}
         <Route path="*" element={<Navigate to="/viewer" replace />} />

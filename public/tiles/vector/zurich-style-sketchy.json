@@ -1,0 +1,932 @@
+{
+  "version": 8,
+  "name": "Zurich Sketchy",
+  "metadata": {
+    "mapbox:autocomposite": false,
+    "maputnik:renderer": "mlgljs",
+    "generator": "zurich-vector-tiles-pipeline",
+    "style-type": "hand-drawn-pencil",
+    "pencil-preset": "sketchy",
+    "pencil-preset-description": "Loose, hand-drawn appearance with pencil textures"
+  },
+  "sources": {
+    "zurich": {
+      "type": "vector",
+      "url": "pmtiles://zurich-vector.pmtiles",
+      "attribution": "&copy; Stadt Z\u00fcrich (Open Data), swisstopo"
+    }
+  },
+  "sprite": "/tiles/vector/sprite",
+  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f8f4e8"
+      }
+    },
+    {
+      "id": "water-fill",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "#d8e4ec",
+        "fill-opacity": 0.7
+      }
+    },
+    {
+      "id": "water-pattern",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "water",
+      "minzoom": 14,
+      "paint": {
+        "fill-pattern": "water-ripple",
+        "fill-opacity": 0.3
+      }
+    },
+    {
+      "id": "water-edge-1",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "water",
+      "paint": {
+        "line-pattern": "pencil-line-medium",
+        "line-width": 12,
+        "line-opacity": 0.6
+      }
+    },
+    {
+      "id": "water-edge-2",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "water",
+      "paint": {
+        "line-color": "#98a8b8",
+        "line-width": 1,
+        "line-opacity": 0.4,
+        "line-offset": 2
+      }
+    },
+    {
+      "id": "building-shadow-3",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "building_shadows",
+      "minzoom": 14,
+      "paint": {
+        "fill-color": "#7a7570",
+        "fill-opacity": 0.08,
+        "fill-translate": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "building-shadow-2",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "building_shadows",
+      "minzoom": 14,
+      "paint": {
+        "fill-color": "#5a5550",
+        "fill-opacity": 0.1
+      }
+    },
+    {
+      "id": "building-shadow-1",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "building_shadows",
+      "minzoom": 15,
+      "paint": {
+        "fill-color": "#3a3530",
+        "fill-opacity": 0.12,
+        "fill-translate": [
+          -1,
+          -1
+        ]
+      }
+    },
+    {
+      "id": "building-shadow-hatching",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "building_shadows",
+      "minzoom": 16,
+      "paint": {
+        "fill-pattern": "crosshatch",
+        "fill-opacity": 0.15
+      }
+    },
+    {
+      "id": "building-fill",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "buildings",
+      "minzoom": 12,
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "art"
+          ],
+          "Gebaeude_Wohnen",
+          "#f0e8d8",
+          "Wohngebaeude",
+          "#f0e8d8",
+          "Gebaeude_Industrie",
+          "#e0dcd4",
+          "Industriegebaeude",
+          "#e0dcd4",
+          "Gebaeude_Gewerbe",
+          "#e8e4dc",
+          "Gewerbegebaeude",
+          "#e8e4dc",
+          "Gebaeude_oeffentlich",
+          "#e8e0d0",
+          "#ece6d8"
+        ],
+        "fill-opacity": 0.95
+      }
+    },
+    {
+      "id": "building-texture",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "buildings",
+      "minzoom": 16,
+      "paint": {
+        "fill-pattern": "stipple",
+        "fill-opacity": 0.08
+      }
+    },
+    {
+      "id": "building-outline-1",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "buildings",
+      "minzoom": 14,
+      "paint": {
+        "line-color": "#2a2520",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.5,
+          16,
+          2.0,
+          18,
+          3.0
+        ],
+        "line-opacity": 0.85,
+        "line-dasharray": [
+          6,
+          3,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "id": "building-outline-2",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "buildings",
+      "minzoom": 15,
+      "paint": {
+        "line-color": "#4a4540",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          15,
+          1.0,
+          18,
+          2.0
+        ],
+        "line-opacity": 0.5,
+        "line-offset": -2.5,
+        "line-dasharray": [
+          6,
+          3,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "id": "roof-fill",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "roofs",
+      "minzoom": 16,
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "material"
+          ],
+          "roof_terracotta",
+          "#8a6a5a",
+          "terracotta",
+          "#8a6a5a",
+          "roof_slate",
+          "#6a6a6a",
+          "slate",
+          "#6a6a6a",
+          "#7a7068"
+        ],
+        "fill-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "slope_angle"
+            ],
+            20
+          ],
+          0,
+          0.3,
+          45,
+          0.6
+        ]
+      }
+    },
+    {
+      "id": "roof-pattern",
+      "type": "fill",
+      "source": "zurich",
+      "source-layer": "roofs",
+      "minzoom": 17,
+      "paint": {
+        "fill-pattern": "hatching-45",
+        "fill-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "coalesce",
+            [
+              "get",
+              "slope_angle"
+            ],
+            20
+          ],
+          0,
+          0.1,
+          45,
+          0.25
+        ]
+      }
+    },
+    {
+      "id": "roof-outline-1",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "roofs",
+      "minzoom": 16,
+      "paint": {
+        "line-color": "#4a4540",
+        "line-width": 0.8,
+        "line-opacity": 0.7
+      }
+    },
+    {
+      "id": "roof-outline-2",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "roofs",
+      "minzoom": 17,
+      "paint": {
+        "line-color": "#6a6560",
+        "line-width": 0.4,
+        "line-opacity": 0.4,
+        "line-offset": -0.5,
+        "line-dasharray": [
+          3,
+          2,
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "id": "street-casing",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "transportation",
+      "minzoom": 12,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#9a9590",
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.5
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          1.5,
+          14,
+          4,
+          18,
+          14
+        ],
+        "line-opacity": 0.4
+      }
+    },
+    {
+      "id": "street-fill",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "transportation",
+      "minzoom": 12,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#f5f0e4",
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.5
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.8,
+          14,
+          3,
+          18,
+          12
+        ]
+      }
+    },
+    {
+      "id": "street-edge-left",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "transportation",
+      "minzoom": 14,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#4a4540",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0.5,
+          18,
+          1.2
+        ],
+        "line-opacity": 0.6,
+        "line-offset": [
+          "interpolate",
+          [
+            "exponential",
+            1.5
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          -1.5,
+          18,
+          -6
+        ],
+        "line-pattern": "pencil-line-thin"
+      }
+    },
+    {
+      "id": "street-edge-right",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "transportation",
+      "minzoom": 14,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#4a4540",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0.5,
+          18,
+          1.2
+        ],
+        "line-opacity": 0.6,
+        "line-offset": [
+          "interpolate",
+          [
+            "exponential",
+            1.5
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.5,
+          18,
+          6
+        ],
+        "line-pattern": "pencil-line-thin"
+      }
+    },
+    {
+      "id": "street-footway",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "transportation",
+      "minzoom": 15,
+      "filter": [
+        "in",
+        [
+          "get",
+          "class"
+        ],
+        [
+          "literal",
+          [
+            "footway",
+            "pedestrian",
+            "cycleway"
+          ]
+        ]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#8a8580",
+        "line-width": 1.5,
+        "line-opacity": 0.5,
+        "line-dasharray": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "id": "railway-track-bed",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "railway",
+      "minzoom": 13,
+      "paint": {
+        "line-color": "#8a8580",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          13,
+          2,
+          18,
+          6
+        ],
+        "line-opacity": 0.3
+      }
+    },
+    {
+      "id": "railway-rail-left",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "railway",
+      "minzoom": 14,
+      "paint": {
+        "line-color": "#2a2520",
+        "line-width": 1,
+        "line-opacity": 0.7,
+        "line-offset": -1.5
+      }
+    },
+    {
+      "id": "railway-rail-right",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "railway",
+      "minzoom": 14,
+      "paint": {
+        "line-color": "#2a2520",
+        "line-width": 1,
+        "line-opacity": 0.7,
+        "line-offset": 1.5
+      }
+    },
+    {
+      "id": "railway-ties",
+      "type": "line",
+      "source": "zurich",
+      "source-layer": "railway",
+      "minzoom": 15,
+      "paint": {
+        "line-color": "#4a4540",
+        "line-width": 3,
+        "line-opacity": 0.5,
+        "line-dasharray": [
+          0.5,
+          2
+        ]
+      }
+    },
+    {
+      "id": "tree-shadow",
+      "type": "circle",
+      "source": "zurich",
+      "source-layer": "trees",
+      "minzoom": 14,
+      "paint": {
+        "circle-color": "#7a7570",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          2.5,
+          16,
+          5,
+          18,
+          10
+        ],
+        "circle-opacity": 0.15,
+        "circle-translate": [
+          2,
+          2
+        ],
+        "circle-blur": 0.5
+      }
+    },
+    {
+      "id": "tree-fill",
+      "type": "circle",
+      "source": "zurich",
+      "source-layer": "trees",
+      "minzoom": 14,
+      "paint": {
+        "circle-color": "#889888",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          2,
+          16,
+          4,
+          18,
+          [
+            "interpolate",
+            [
+              "linear"
+            ],
+            [
+              "coalesce",
+              [
+                "get",
+                "crown"
+              ],
+              5
+            ],
+            2,
+            5,
+            10,
+            14
+          ]
+        ],
+        "circle-opacity": 0.6,
+        "circle-blur": 0.3
+      }
+    },
+    {
+      "id": "tree-outline-1",
+      "type": "circle",
+      "source": "zurich",
+      "source-layer": "trees",
+      "minzoom": 15,
+      "paint": {
+        "circle-color": "transparent",
+        "circle-stroke-color": "#687868",
+        "circle-stroke-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          15,
+          0.8,
+          18,
+          1.5
+        ],
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          15,
+          3,
+          18,
+          [
+            "interpolate",
+            [
+              "linear"
+            ],
+            [
+              "coalesce",
+              [
+                "get",
+                "crown"
+              ],
+              5
+            ],
+            2,
+            5,
+            10,
+            14
+          ]
+        ],
+        "circle-stroke-opacity": 0.7
+      }
+    },
+    {
+      "id": "tree-outline-2",
+      "type": "circle",
+      "source": "zurich",
+      "source-layer": "trees",
+      "minzoom": 16,
+      "paint": {
+        "circle-color": "transparent",
+        "circle-stroke-color": "#687868",
+        "circle-stroke-width": 0.5,
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          16,
+          4.5,
+          18,
+          [
+            "+",
+            [
+              "interpolate",
+              [
+                "linear"
+              ],
+              [
+                "coalesce",
+                [
+                  "get",
+                  "crown"
+                ],
+                5
+              ],
+              2,
+              5,
+              10,
+              14
+            ],
+            1.5
+          ]
+        ],
+        "circle-stroke-opacity": 0.3,
+        "circle-translate": [
+          0.5,
+          -0.5
+        ]
+      }
+    },
+    {
+      "id": "poi-amenity",
+      "type": "circle",
+      "source": "zurich",
+      "source-layer": "poi",
+      "minzoom": 16,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "amenity"
+      ],
+      "paint": {
+        "circle-color": "#f5f0e0",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          16,
+          3,
+          18,
+          6
+        ],
+        "circle-opacity": 0.9,
+        "circle-stroke-color": [
+          "match",
+          [
+            "get",
+            "subclass"
+          ],
+          "fountain",
+          "#6688aa",
+          "bench",
+          "#886644",
+          "toilets",
+          "#886688",
+          "#4a4540"
+        ],
+        "circle-stroke-width": 1.5
+      }
+    },
+    {
+      "id": "poi-infrastructure",
+      "type": "circle",
+      "source": "zurich",
+      "source-layer": "poi",
+      "minzoom": 17,
+      "filter": [
+        "==",
+        [
+          "get",
+          "class"
+        ],
+        "infrastructure"
+      ],
+      "paint": {
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "subclass"
+          ],
+          "street_lamp",
+          "#aa9944",
+          "#8a8580"
+        ],
+        "circle-radius": 2,
+        "circle-opacity": 0.5
+      }
+    },
+    {
+      "id": "street-label",
+      "type": "symbol",
+      "source": "zurich",
+      "source-layer": "transportation",
+      "minzoom": 15,
+      "filter": [
+        "has",
+        "name"
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          15,
+          9,
+          18,
+          13
+        ],
+        "text-max-angle": 25,
+        "text-padding": 30,
+        "text-letter-spacing": 0.05
+      },
+      "paint": {
+        "text-color": "#2a2520",
+        "text-halo-color": "#f8f4e8",
+        "text-halo-width": 2,
+        "text-halo-blur": 0.5
+      }
+    },
+    {
+      "id": "fountain-label",
+      "type": "symbol",
+      "source": "zurich",
+      "source-layer": "poi",
+      "minzoom": 17,
+      "filter": [
+        "all",
+        [
+          "==",
+          [
+            "get",
+            "subclass"
+          ],
+          "fountain"
+        ],
+        [
+          "has",
+          "name"
+        ]
+      ],
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 9,
+        "text-offset": [
+          0,
+          1.2
+        ],
+        "text-anchor": "top",
+        "text-letter-spacing": 0.02
+      },
+      "paint": {
+        "text-color": "#6688aa",
+        "text-halo-color": "#f8f4e8",
+        "text-halo-width": 1.5
+      }
+    }
+  ],
+  "center": [
+    8.5417,
+    47.3769
+  ],
+  "zoom": 15,
+  "bearing": 0,
+  "pitch": 0
+}

@@ -1,0 +1,343 @@
+/**
+ * VectorViewer styles
+ */
+
+.vector-page {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+/* Control Panel */
+.vector-panel {
+  width: 280px;
+  min-width: 280px;
+  background: #242424;
+  border-right: 1px solid #333;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vector-panel h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #333;
+}
+
+.vector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vector-section h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Variant buttons */
+.variant-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.variant-button {
+  flex: 1;
+  padding: 8px 12px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #ccc;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.variant-button:hover {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.variant-button.active {
+  background: #4a6fa5;
+  border-color: #5a8fd5;
+  color: #fff;
+}
+
+/* Preset buttons (pencil styles) */
+.preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.preset-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-button:hover {
+  background: #333;
+  border-color: #4a4a4a;
+  color: #ccc;
+}
+
+.preset-button.active {
+  background: linear-gradient(135deg, #3a5a7a 0%, #4a6a8a 100%);
+  border-color: #5a8ab0;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(74, 111, 165, 0.3);
+}
+
+.preset-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.preset-name {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Full-width last item if odd count */
+.preset-buttons .preset-button:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+
+/* Layer toggles */
+.layer-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.layer-toggle:hover {
+  background: #333;
+}
+
+.layer-toggle input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #4a6fa5;
+}
+
+.layer-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.layer-label {
+  font-size: 0.875rem;
+  color: #ccc;
+}
+
+/* Feature inspector */
+.feature-inspector {
+  background: #2a2a2a;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 0.8rem;
+}
+
+.feature-layer {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #333;
+  color: #888;
+}
+
+.feature-layer code {
+  color: #6db3f2;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.feature-props {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.feature-prop {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.prop-key {
+  color: #888;
+  white-space: nowrap;
+}
+
+.prop-value {
+  color: #e0e0e0;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.clear-selection {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: #444;
+  border: none;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 0.75rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.clear-selection:hover {
+  background: #555;
+}
+
+/* Pipeline info */
+.vector-info {
+  margin-top: auto;
+}
+
+.pipeline-commands {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pipeline-commands code {
+  display: block;
+  padding: 6px 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 0.7rem;
+  color: #888;
+  word-break: break-all;
+}
+
+/* Map container */
+.vector-map-container {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.vector-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading state */
+.vector-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(26, 26, 26, 0.9);
+  z-index: 100;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #333;
+  border-top-color: #4a6fa5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.vector-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.vector-error h2 {
+  margin: 0 0 16px;
+  color: #ff6b6b;
+}
+
+.vector-error pre {
+  background: #2a2a2a;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 0.875rem;
+  color: #ccc;
+  white-space: pre-wrap;
+  text-align: left;
+  max-width: 500px;
+}
+
+/* MapLibre overrides */
+.vector-map .maplibregl-ctrl-attrib {
+  background: rgba(0, 0, 0, 0.7);
+  color: #888;
+}
+
+.vector-map .maplibregl-ctrl-attrib a {
+  color: #6db3f2;
+}
+
+.vector-map .maplibregl-popup-content {
+  background: #242424;
+  color: #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.vector-map .maplibregl-popup-tip {
+  border-top-color: #242424;
+}

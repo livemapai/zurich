@@ -132,3 +132,49 @@ export {
 	VEHICLE_LABELS_MIN_ZOOM,
 	type VehicleLabelsLayerConfig,
 } from "./VehicleLabelsLayer";
+
+// Streets layer
+export {
+	createStreetsLayer,
+	createMinimapStreetsLayer,
+	processStreets,
+	type StreetsLayerConfig,
+	type StreetFeature,
+	type StreetPath,
+} from "./StreetsLayer";
+
+// Water layer
+export {
+	createWaterLayers,
+	createMinimapWaterLayers,
+	type WaterLayerConfig,
+	type WaterFeature,
+	type LakePolygon,
+	type RiverPath,
+} from "./WaterLayer";
+
+// Roofs layer (LOD2 3D roof geometry)
+export {
+	createRoofsLayer,
+	createMinimapRoofsLayer,
+	type RoofsLayerConfig,
+	type RoofColorMode,
+	type RoofFaceFeature,
+	type RoofFaceCollection,
+	type RoofFaceProperties,
+	type RoofMaterial,
+	type RoofType,
+	type RoofOrientation,
+} from "./RoofsLayer";
+
+// Gradient shadow layer (deck.gl overlay for MapLibre)
+export {
+	GradientShadowLayer,
+	createGradientShadowLayer,
+	createGradientShadowLayers,
+	expandShadowsWithGradient,
+	type GradientShadowLayerProps,
+	type SimpleGradientShadowConfig,
+	type ShadowFeature,
+	type ShadowPolygon,
+} from "./GradientShadowLayer";

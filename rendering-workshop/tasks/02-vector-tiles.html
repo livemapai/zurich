@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task 2: Vector Tiles - MapLibre Workshop</title>
+
+  <!-- MapLibre -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="task-layout">
+    <!-- Sidebar -->
+    <aside class="task-sidebar">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge">Task 2 of 7</span>
+      <h1>Vector Tiles: Data, Not Images</h1>
+
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>Understand how vector tiles contain geometry data that's rendered client-side.</p>
+      </div>
+
+      <h2>Raster vs Vector</h2>
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h3>Raster Tiles</h3>
+          <ul>
+            <li>Pre-rendered images</li>
+            <li>Style baked in</li>
+            <li>No feature queries</li>
+            <li>Larger file size</li>
+          </ul>
+        </div>
+        <div class="comparison-card positive">
+          <h3>Vector Tiles</h3>
+          <ul>
+            <li>Geometry + attributes</li>
+            <li>Style on client</li>
+            <li>Click to query</li>
+            <li>Smaller, efficient</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>The source-layer Concept</h2>
+      <p>Vector tiles contain multiple <strong>layers</strong> of data (buildings, roads, water, etc.). When styling, you must specify which layer to use:</p>
+
+      <div class="code-block" data-language="JSON">
+        <pre><code>{
+  "id": "country-borders",
+  "type": "line",
+  "source": "demotiles",
+  "source-layer": "countries",
+  "paint": {
+    "line-color": "#ff6600",
+    "line-width": 2
+  }
+}</code></pre>
+      </div>
+
+      <h2>Hands-On Exercise</h2>
+      <ol>
+        <li>Use the controls to <strong>toggle layers</strong> on/off</li>
+        <li>Change <strong>colors</strong> dynamically</li>
+        <li><strong>Click on the map</strong> to query features</li>
+        <li>Open Network tab - notice <code>.pbf</code> files</li>
+      </ol>
+
+      <div class="hint-box">
+        <strong>Key Insight:</strong> Notice how changing colors is <em>instant</em> - no network requests! The browser re-renders the same tile data with new styles.
+      </div>
+
+      <h2>What's in a Vector Tile?</h2>
+      <ul>
+        <li><strong>Geometry</strong>: Points, lines, polygons</li>
+        <li><strong>Properties</strong>: name, type, height, etc.</li>
+        <li><strong>Encoded</strong>: Protobuf binary format (.pbf)</li>
+      </ul>
+
+      <h2>What are .pbf Files?</h2>
+      <p>
+        <strong>PBF</strong> stands for <strong>Protocol Buffer Format</strong> - Google's
+        compact binary serialization format. Vector tiles use this format because:
+      </p>
+      <ul>
+        <li><strong>Compact</strong>: 3-10x smaller than JSON</li>
+        <li><strong>Fast</strong>: No text parsing needed</li>
+        <li><strong>Typed</strong>: Schema-defined structure</li>
+      </ul>
+
+      <div class="code-block" data-language="Comparison">
+        <pre><code>// Raster tile:
+GET /tiles/14/8567/5765.png  -> Image bytes (50-100 KB)
+
+// Vector tile:
+GET /tiles/14/8567/5765.pbf  -> Protobuf bytes (5-20 KB)
+                               -> Contains: geometry + properties
+                               -> Rendered by browser!</code></pre>
+      </div>
+
+      <div class="success-box">
+        <strong>Success Criteria:</strong> You can explain why style changes don't require new tile downloads and can click a feature to see its properties.
+      </div>
+
+      <div class="nav-links">
+        <a href="01-raster-tiles.html">&larr; Previous: Raster Tiles</a>
+        <a href="03-maputnik/instructions.html">Next: Maputnik &rarr;</a>
+      </div>
+    </aside>
+
+    <!-- Map Content -->
+    <div class="task-content">
+      <div id="map"></div>
+
+      <!-- Map Controls Overlay -->
+      <div class="map-overlay top-left">
+        <h3>Dynamic Styling</h3>
+
+        <label>
+          <input type="checkbox" id="showCountries" checked>
+          Countries (fill)
+        </label>
+        <label>
+          <input type="color" id="countryColor" value="#2d3e50">
+          Country fill color
+        </label>
+
+        <label>
+          <input type="checkbox" id="showBorders" checked>
+          Borders (line)
+        </label>
+        <label>
+          <input type="color" id="borderColor" value="#ff6600">
+          Border color
+        </label>
+
+        <label>
+          <input type="checkbox" id="showLabels" checked>
+          Labels (symbol)
+        </label>
+
+        <div style="margin-top: 1rem;">
+          <label>Border width: <span id="widthValue">2</span>px</label>
+          <input type="range" id="borderWidth" min="1" max="8" value="2">
+        </div>
+
+        <div class="stats">
+          Click anywhere on the map to query features!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../assets/workshop.js"></script>
+
+  <!-- Map Initialization -->
+  <script>
+    // Initialize map with vector tiles
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'demotiles': {
+            type: 'vector',
+            url: 'https://demotiles.maplibre.org/tiles/tiles.json'
+          }
+        },
+        layers: [
+          {
+            id: 'background',
+            type: 'background',
+            paint: {
+              'background-color': '#1c1917'
+            }
+          },
+          {
+            id: 'countries-fill',
+            type: 'fill',
+            source: 'demotiles',
+            'source-layer': 'countries',
+            paint: {
+              'fill-color': '#2d3e50',
+              'fill-opacity': 0.8
+            }
+          },
+          {
+            id: 'countries-border',
+            type: 'line',
+            source: 'demotiles',
+            'source-layer': 'countries',
+            paint: {
+              'line-color': '#ff6600',
+              'line-width': 2
+            }
+          },
+          {
+            id: 'countries-label',
+            type: 'symbol',
+            source: 'demotiles',
+            'source-layer': 'centroids',
+            layout: {
+              'text-field': ['get', 'NAME'],
+              'text-font': ['Open Sans Bold'],
+              'text-size': 12,
+              'text-max-width': 8
+            },
+            paint: {
+              'text-color': '#ffffff',
+              'text-halo-color': '#1c1917',
+              'text-halo-width': 1.5
+            }
+          }
+        ],
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+      },
+      center: [8.54, 47.37],
+      zoom: 3,
+      hash: 'map'
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+
+    // Dynamic styling controls
+    map.on('load', () => {
+      // Toggle countries
+      document.getElementById('showCountries').addEventListener('change', (e) => {
+        map.setLayoutProperty('countries-fill', 'visibility', e.target.checked ? 'visible' : 'none');
+      });
+
+      // Country color
+      document.getElementById('countryColor').addEventListener('input', (e) => {
+        map.setPaintProperty('countries-fill', 'fill-color', e.target.value);
+      });
+
+      // Toggle borders
+      document.getElementById('showBorders').addEventListener('change', (e) => {
+        map.setLayoutProperty('countries-border', 'visibility', e.target.checked ? 'visible' : 'none');
+      });
+
+      // Border color
+      document.getElementById('borderColor').addEventListener('input', (e) => {
+        map.setPaintProperty('countries-border', 'line-color', e.target.value);
+      });
+
+      // Toggle labels
+      document.getElementById('showLabels').addEventListener('change', (e) => {
+        map.setLayoutProperty('countries-label', 'visibility', e.target.checked ? 'visible' : 'none');
+      });
+
+      // Border width
+      document.getElementById('borderWidth').addEventListener('input', (e) => {
+        const width = parseInt(e.target.value);
+        document.getElementById('widthValue').textContent = width;
+        map.setPaintProperty('countries-border', 'line-width', width);
+      });
+
+      // Feature query on click
+      map.on('click', (e) => {
+        const features = map.queryRenderedFeatures(e.point);
+
+        if (features.length > 0) {
+          const feature = features[0];
+          const props = feature.properties;
+
+          let html = `<div style="max-width: 300px;">
+            <h4 style="margin: 0 0 0.5rem; color: #1c1917;">${props.NAME || 'Feature'}</h4>
+            <table style="width: 100%; font-size: 0.8rem;">
+              <tr><td style="color: #666; padding-right: 1rem;">Layer:</td><td><code>${feature.sourceLayer}</code></td></tr>
+              <tr><td style="color: #666;">Type:</td><td>${feature.geometry.type}</td></tr>`;
+
+          for (const [key, value] of Object.entries(props)) {
+            if (key !== 'NAME' && value) {
+              html += `<tr><td style="color: #666;">${key}:</td><td>${value}</td></tr>`;
+            }
+          }
+
+          html += '</table></div>';
+
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(html)
+            .addTo(map);
+        }
+      });
+
+      // Change cursor on hover
+      map.on('mouseenter', 'countries-fill', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'countries-fill', () => {
+        map.getCanvas().style.cursor = '';
+      });
+    });
+
+    // Console logging
+    console.log('%c=== Vector Tile Workshop ===', 'color: #22c55e; font-size: 16px; font-weight: bold');
+    console.log('%cVector tiles contain DATA, not images!', 'color: #0ea5e9');
+    console.log('Notice how style changes are instant (no network requests)');
+    console.log('Try: map.queryRenderedFeatures(map.getCenter())');
+  </script>
+</body>
+</html>

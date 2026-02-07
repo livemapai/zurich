@@ -8,6 +8,8 @@ import type {
 	LightCollection,
 	TramTrackCollection,
 	OverheadPoleCollection,
+	StreetCollection,
+	WaterCollection,
 	LngLat,
 	TramTripsData,
 } from "@/types";
@@ -48,12 +50,16 @@ import {
 	createFountainsLayer,
 	createBenchesLayer,
 	createToiletsLayer,
+	createStreetsLayer,
+	createWaterLayers,
+	createRoofsLayer,
 	TEXTURE_PROVIDERS,
 	MAP_TILE_PROVIDERS,
 	SWISS_ZOOM_THRESHOLD,
 	PHOTOREALISTIC_MIN_ZOOM,
 	type TextureProviderId,
 	type MapTileProviderId,
+	type RoofFaceCollection,
 } from "@/layers";
 import { calculateEffectiveZoom } from "@/utils";
 import { Minimap } from "@/components/Minimap";
@@ -110,6 +116,9 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 	const [fountains, setFountains] = useState<FountainCollection | undefined>();
 	const [benches, setBenches] = useState<BenchCollection | undefined>();
 	const [toilets, setToilets] = useState<ToiletCollection | undefined>();
+	const [streets, setStreets] = useState<StreetCollection | undefined>();
+	const [water, setWater] = useState<WaterCollection | undefined>();
+	const [roofs, setRoofs] = useState<RoofFaceCollection | undefined>();
 	const [tramTrips, setTramTrips] = useState<TramTripsData | undefined>();
 	const [visibleTransitRoutes, setVisibleTransitRoutes] = useState<Set<string>>(
 		new Set()
@@ -140,6 +149,8 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 	const [layerStates, setLayerStates] = useState<Record<string, LayerState>>({
 		terrain3d: { visible: true, opacity: 1 },
 		mapTiles: { visible: false, opacity: 1 },
+		water: { visible: true, opacity: 1 },
+		streets: { visible: true, opacity: 1 },
 		buildings: { visible: true, opacity: 1 },
 		trees: { visible: true, opacity: 1 },
 		lights: { visible: true, opacity: 1 },
@@ -148,6 +159,7 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 		fountains: { visible: true, opacity: 1 },
 		benches: { visible: true, opacity: 1 },
 		toilets: { visible: true, opacity: 1 },
+		roofs: { visible: true, opacity: 1 },
 		tramTrips: { visible: true, opacity: 1 },
 	});
 	const [terrainTexture, setTerrainTexture] =
@@ -479,6 +491,97 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 		};
 
 		loadToilets();
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	// Load streets data
+	useEffect(() => {
+		let cancelled = false;
+
+		const loadStreets = async () => {
+			try {
+				const response = await fetch(CONFIG.data.streets);
+				if (!response.ok) {
+					throw new Error(`Failed to load streets: ${response.status}`);
+				}
+				const data: StreetCollection = await response.json();
+
+				if (!cancelled) {
+					setStreets(data);
+				}
+			} catch (err) {
+				if (!cancelled) {
+					console.warn("Failed to load streets:", err);
+					// Continue without streets
+				}
+			}
+		};
+
+		loadStreets();
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	// Load water data
+	useEffect(() => {
+		let cancelled = false;
+
+		const loadWater = async () => {
+			try {
+				const response = await fetch(CONFIG.data.water);
+				if (!response.ok) {
+					throw new Error(`Failed to load water: ${response.status}`);
+				}
+				const data: WaterCollection = await response.json();
+
+				if (!cancelled) {
+					setWater(data);
+				}
+			} catch (err) {
+				if (!cancelled) {
+					console.warn("Failed to load water:", err);
+					// Continue without water
+				}
+			}
+		};
+
+		loadWater();
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	// Load roofs data (LOD2 3D roof faces)
+	useEffect(() => {
+		let cancelled = false;
+
+		const loadRoofs = async () => {
+			try {
+				const response = await fetch(CONFIG.data.roofs);
+				if (!response.ok) {
+					throw new Error(`Failed to load roofs: ${response.status}`);
+				}
+				const data: RoofFaceCollection = await response.json();
+
+				if (!cancelled) {
+					setRoofs(data);
+					console.log(`Loaded ${data.features?.length ?? 0} roof faces`);
+				}
+			} catch (err) {
+				if (!cancelled) {
+					console.warn("Failed to load roofs:", err);
+					// Continue without roofs - buildings will still render without detailed roof geometry
+				}
+			}
+		};
+
+		loadRoofs();
 
 		return () => {
 			cancelled = true;
@@ -888,6 +991,22 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 				opacity: layerStates.mapTiles?.opacity ?? 1,
 			},
 			{
+				id: "water",
+				name: "Water Bodies",
+				category: "Nature",
+				visible: layerStates.water?.visible ?? true,
+				opacity: layerStates.water?.opacity ?? 1,
+				count: water?.features?.length,
+			},
+			{
+				id: "streets",
+				name: "Streets",
+				category: "Infrastructure",
+				visible: layerStates.streets?.visible ?? true,
+				opacity: layerStates.streets?.opacity ?? 1,
+				count: streets?.features?.length,
+			},
+			{
 				id: "buildings",
 				name: "Buildings",
 				category: "Infrastructure",
@@ -895,6 +1014,15 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 				opacity: layerStates.buildings?.opacity ?? 1,
 				supportsOpacity: true,
 				count: buildings?.features?.length,
+			},
+			{
+				id: "roofs",
+				name: "3D Roofs (LOD2)",
+				category: "Infrastructure",
+				visible: layerStates.roofs?.visible ?? true,
+				opacity: layerStates.roofs?.opacity ?? 1,
+				supportsOpacity: true,
+				count: roofs?.features?.length,
 			},
 			{
 				id: "trees",
@@ -964,6 +1092,7 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 		[
 			layerStates,
 			buildings?.features?.length,
+			roofs?.features?.length,
 			trees?.features?.length,
 			lights?.features?.length,
 			tramTracks?.features?.length,
@@ -971,6 +1100,8 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 			fountains?.features?.length,
 			benches?.features?.length,
 			toilets?.features?.length,
+			streets?.features?.length,
+			water?.features?.length,
 			tramTrips?.trips?.length,
 			isBinaryMode,
 			gtfsTotalTrips,
@@ -1008,6 +1139,24 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 			}));
 		}
 
+		// Water bodies (below streets, at ground level) - lakes + rivers
+		if (water?.features?.length && layerStates.water?.visible) {
+			result.push(
+				...createWaterLayers(water.features, {
+					opacity: layerStates.water.opacity,
+				}),
+			);
+		}
+
+		// Streets (at ground level, above water)
+		if (streets?.features?.length && layerStates.streets?.visible) {
+			result.push(
+				createStreetsLayer(streets.features, {
+					opacity: layerStates.streets.opacity,
+				}),
+			);
+		}
+
 		// Buildings (if loaded and visible) - with opacity support
 		// useTerrainElevation matches terrain3d visibility:
 		// - Terrain ON → buildings use per-feature terrain elevations
@@ -1017,6 +1166,17 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 				createBuildingsLayer(buildings.features, {
 					opacity: layerStates.buildings.opacity,
 					useTerrainElevation: layerStates.terrain3d?.visible ?? true,
+				}),
+			);
+		}
+
+		// 3D Roof faces from LOD2 data (if loaded and visible)
+		// Renders actual roof geometry (gabled, hipped, flat) with material-based colors
+		if (roofs?.features?.length && layerStates.roofs?.visible) {
+			result.push(
+				createRoofsLayer(roofs.features, {
+					opacity: layerStates.roofs.opacity,
+					colorMode: "material", // Color by roof material type
 				}),
 			);
 		}
@@ -1073,6 +1233,7 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 		return result;
 	}, [
 		buildings,
+		roofs,
 		trees,
 		lights,
 		tramTracks,
@@ -1080,6 +1241,8 @@ export function ZurichViewer({ onLoadProgress, onError }: ZurichViewerProps) {
 		fountains,
 		benches,
 		toilets,
+		streets,
+		water,
 		activeTrips,
 		layerStates,
 		resolvedTextureUrl,

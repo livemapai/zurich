@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task 3: Maputnik Style Editor - MapLibre Workshop</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body>
+  <div class="instructions-layout">
+    <div class="instructions-container">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge">Task 3 of 7</span>
+      <h1>Maputnik: Visual Style Editor</h1>
+
+      <p>
+        <strong>Maputnik</strong> is a free, open-source visual editor for MapLibre/Mapbox styles.
+        Instead of writing JSON by hand, you can point-and-click to build beautiful map styles.
+      </p>
+
+      <a href="https://maputnik.github.io/editor" target="_blank" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; margin: 1rem 0;">
+        Open Maputnik Editor &rarr;
+      </a>
+
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>
+          Learn to use visual style editing tools and understand how they generate the same
+          JSON structure you've been writing manually.
+        </p>
+      </div>
+
+      <h2>Exercise: Export, Edit, Reimport</h2>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">1</span>
+          <h3>Export a Style from the Map</h3>
+        </div>
+        <p>Open the browser console on Task 2's map and run:</p>
+        <div class="code-block" data-language="Console">
+          <pre><code>> copy(JSON.stringify(map.getStyle(), null, 2))
+// Style JSON copied to clipboard!</code></pre>
+        </div>
+        <p>This copies the complete style definition to your clipboard.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">2</span>
+          <h3>Import into Maputnik</h3>
+        </div>
+        <ol>
+          <li>Open <a href="https://maputnik.github.io/editor" target="_blank" style="color: var(--color-accent);">Maputnik</a></li>
+          <li>Click <strong>Open</strong> (top menu)</li>
+          <li>Select <strong>Upload Style</strong></li>
+          <li>Paste your JSON and click <strong>Upload</strong></li>
+        </ol>
+        <p>You should now see your map style in the visual editor!</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">3</span>
+          <h3>Explore the Interface</h3>
+        </div>
+        <ul>
+          <li><strong>Layer Panel (left)</strong>: All style layers in render order</li>
+          <li><strong>Layer Editor (right)</strong>: Properties for selected layer</li>
+          <li><strong>Map Preview (center)</strong>: Live updates as you edit</li>
+          <li><strong>Inspect Mode</strong>: Click the <kbd>i</kbd> icon to query features</li>
+        </ul>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">4</span>
+          <h3>Make Changes</h3>
+        </div>
+        <p>Try these modifications:</p>
+        <ul>
+          <li>Change the <code>countries-fill</code> color to something dramatic</li>
+          <li>Increase <code>countries-border</code> line-width to 4</li>
+          <li>Edit the <code>countries-label</code> text size</li>
+          <li>Add a new layer! Try a <code>circle</code> layer for the centroids</li>
+        </ul>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">5</span>
+          <h3>Add a Data-Driven Expression</h3>
+        </div>
+        <p>Let's color countries by their name length (just for fun!):</p>
+        <ol>
+          <li>Select the <code>countries-fill</code> layer</li>
+          <li>Click on <code>fill-color</code></li>
+          <li>Switch from "Color" to "Expression"</li>
+          <li>Enter this expression:</li>
+        </ol>
+        <div class="code-block" data-language="Expression">
+          <pre><code>[
+  "interpolate",
+  ["linear"],
+  ["length", ["get", "NAME"]],
+  3, "#ff6b6b",
+  10, "#4ecdc4",
+  20, "#45b7d1"
+]</code></pre>
+        </div>
+        <p>Countries with short names will be red, long names will be blue!</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">6</span>
+          <h3>Export and Save</h3>
+        </div>
+        <ol>
+          <li>Click <strong>Export</strong> in the top menu</li>
+          <li>Select <strong>Download</strong> to save as <code>style.json</code></li>
+          <li>Save it to <code>rendering-workshop/tasks/03-maputnik/style.json</code></li>
+        </ol>
+      </div>
+
+      <div class="hint-box">
+        <strong>Pro Tip:</strong> Use Maputnik's <strong>Inspect Mode</strong> (the <kbd>i</kbd> icon)
+        to click on any map feature and see its properties. This is incredibly useful when you're
+        not sure what fields are available for styling!
+      </div>
+
+      <h2>Key Takeaways</h2>
+      <ul>
+        <li>Maputnik generates the exact same JSON you've been writing</li>
+        <li>Visual editors make iteration faster</li>
+        <li>The <code>map.getStyle()</code> method exports current style</li>
+        <li>You can switch between code and visual editing</li>
+      </ul>
+
+      <div class="success-box">
+        <strong>Success Criteria:</strong> You've successfully roundtripped a style:
+        exported from code, edited in Maputnik, and saved the modified version.
+      </div>
+
+      <h2>Bonus: Load Your Custom Style</h2>
+      <p>Create a new HTML file that loads your exported style:</p>
+      <div class="code-block" data-language="HTML">
+        <pre><code>&lt;script&gt;
+const map = new maplibregl.Map({
+  container: 'map',
+  style: './style.json',  // Your exported style!
+  center: [8.54, 47.37],
+  zoom: 3
+});
+&lt;/script&gt;</code></pre>
+      </div>
+
+      <h2>Resources</h2>
+      <ul>
+        <li><a href="https://maputnik.github.io/editor" target="_blank" style="color: var(--color-accent);">Maputnik Editor</a></li>
+        <li><a href="https://maplibre.org/maplibre-style-spec/" target="_blank" style="color: var(--color-accent);">MapLibre Style Specification</a></li>
+        <li><a href="https://maplibre.org/maplibre-style-spec/expressions/" target="_blank" style="color: var(--color-accent);">Expression Reference</a></li>
+      </ul>
+
+      <div class="nav-links">
+        <a href="../02-vector-tiles.html">&larr; Previous: Vector Tiles</a>
+        <a href="../04-pmtiles.html">Next: PMTiles &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../../assets/workshop.js"></script>
+</body>
+</html>

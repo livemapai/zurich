@@ -1958,6 +1958,123 @@ def cmd_render_depth(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_render_semantic(args: argparse.Namespace) -> int:
+    """Render semantic conditioning tile with class-colored features."""
+    from .tile_renderer import TileCoord
+    from .sources.satellite import wgs84_to_tile
+    from .sources.vector import VectorSource
+    from .config import PipelineConfig
+    from .blender_renderer import BlenderTileRenderer, ColorRenderConfig
+
+    # Check Blender availability
+    try:
+        renderer = BlenderTileRenderer()
+        info = renderer.check_blender()
+        if info.get("installed"):
+            print(f"✓ Blender {info['version']} found")
+        else:
+            print(f"✗ Blender not found: {info.get('error', 'unknown')}")
+            return 1
+    except FileNotFoundError as e:
+        print(f"✗ Blender not found: {e}")
+        print("  Install: brew install --cask blender")
+        return 1
+
+    config = PipelineConfig()
+
+    # Parse tile coordinate
+    tile_parts = args.tile.split("/")
+    if len(tile_parts) != 3:
+        print(f"Error: Invalid tile format. Use z/x/y (e.g., 16/34322/22950)")
+        return 1
+
+    try:
+        z, x, y = int(tile_parts[0]), int(tile_parts[1]), int(tile_parts[2])
+    except ValueError:
+        print(f"Error: Tile coordinates must be integers")
+        return 1
+
+    coord = TileCoord(z, x, y)
+    bounds = coord.bounds
+
+    print(f"Rendering semantic conditioning tile")
+    print(f"  Tile: {z}/{x}/{y}")
+    print(f"  Bounds: W={bounds[0]:.4f}, S={bounds[1]:.4f}, E={bounds[2]:.4f}, N={bounds[3]:.4f}")
+
+    # Output directory
+    output_dir = Path(args.output) if args.output else Path("public/tiles/semantic")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{z}/{x}/{y}.webp"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load data
+    print("  Loading building data...")
+    vector_source = VectorSource(config.sources.buildings_path)
+    buildings = list(vector_source.query(bounds))
+    print(f"  Found {len(buildings)} buildings")
+
+    # Load trees
+    print("  Loading tree data...")
+    tree_source = VectorSource(config.sources.trees_path)
+    trees = list(tree_source.query(bounds))
+    print(f"  Found {len(trees)} trees")
+
+    # Load water (if available) - use "width" field instead of "height"
+    water_bodies = []
+    water_path = config.sources.buildings_path.parent / "zurich-water.geojson"
+    if water_path.exists():
+        print("  Loading water data...")
+        water_source = VectorSource(water_path, height_field="width")
+        water_bodies = list(water_source.query(bounds))
+        print(f"  Found {len(water_bodies)} water bodies")
+        for w in water_bodies:
+            wtype = w.properties.get("water_type", "unknown")
+            width = w.height
+            print(f"    - {w.properties.get('name', 'unnamed')}: {wtype}, width={width}m")
+
+    # Load streets (if available)
+    streets = []
+    streets_path = config.sources.buildings_path.parent / "zurich-streets.geojson"
+    if streets_path.exists():
+        print("  Loading street data...")
+        streets_source = VectorSource(streets_path)
+        streets = list(streets_source.query(bounds))
+        print(f"  Found {len(streets)} streets")
+
+    # Render semantic tile
+    print("  Rendering semantic tile...")
+    render_config = ColorRenderConfig(
+        image_size=512,
+        samples=16,
+        use_gpu=True,
+    )
+    renderer = BlenderTileRenderer(config=render_config)
+
+    try:
+        image = renderer.render_semantic(
+            buildings=buildings,
+            trees=trees,
+            elevation=None,
+            bounds=bounds,
+            streets=streets if streets else None,
+            water_bodies=water_bodies if water_bodies else None,
+        )
+
+        # Save as WebP
+        from PIL import Image
+        img = Image.fromarray(image)
+        img.save(output_path, "WEBP", quality=90)
+
+        print(f"✅ Saved semantic tile to: {output_path}")
+        return 0
+
+    except Exception as e:
+        print(f"✗ Error rendering: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
 def cmd_ai_generate_area(args: argparse.Namespace) -> int:
     """Generate AI-stylized tiles for an area."""
     from .ai_tile_generator import (
@@ -2545,6 +2662,17 @@ Examples:
     depth_parser.add_argument("--output-dir",
                               help="Output directory (default: public/tiles/depth)")
 
+    # render-semantic command - Render semantic conditioning tiles for LLM style transfer
+    semantic_parser = subparsers.add_parser(
+        "render-semantic",
+        help="Render semantic conditioning tile for LLM style transfer",
+        description="Generate semantic map tiles with class-colored features (roofs, water, trees)."
+    )
+    semantic_parser.add_argument("--tile", "-t", required=True,
+                                 help="Tile coordinate as z/x/y (e.g., 16/34322/22950)")
+    semantic_parser.add_argument("--output", "-o",
+                                 help="Output directory (default: public/tiles/semantic)")
+
     args = parser.parse_args()
 
     if args.command == "preview":
@@ -2597,6 +2725,8 @@ Examples:
         return cmd_sd_generate_area(args)
     elif args.command == "render-depth":
         return cmd_render_depth(args)
+    elif args.command == "render-semantic":
+        return cmd_render_semantic(args)
     # Satellite style transfer commands (recommended img2img)
     elif args.command == "satellite-styles":
         return cmd_satellite_styles(args)

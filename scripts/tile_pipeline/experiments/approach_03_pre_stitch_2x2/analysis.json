@@ -1,0 +1,8 @@
+{
+  "approach_id": 3,
+  "approach_name": "pre_stitch_2x2",
+  "elapsed_seconds": 53.67866277694702,
+  "api_calls": 6,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task 1: Raster Tiles - MapLibre Workshop</title>
+
+  <!-- MapLibre -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="task-layout">
+    <!-- Sidebar -->
+    <aside class="task-sidebar">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge">Task 1 of 7</span>
+      <h1>Understanding Raster Tiles</h1>
+
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>Understand how web maps load pre-rendered image tiles from a server.</p>
+      </div>
+
+      <h2>What Are Raster Tiles?</h2>
+      <p>Raster tiles are <strong>pre-rendered images</strong> (PNG, JPEG, WebP) that cover a fixed geographic area. The map loads these images in a grid pattern and stitches them together seamlessly.</p>
+
+      <h2>The Z/X/Y System</h2>
+      <p>Each tile has coordinates:</p>
+      <ul>
+        <li><strong>Z</strong> (zoom): Resolution level (0-22)</li>
+        <li><strong>X</strong>: Column from left</li>
+        <li><strong>Y</strong>: Row from top</li>
+      </ul>
+
+      <div class="code-block" data-language="URL">
+        <pre><code>https://tile.server.com/{z}/{x}/{y}.png
+
+Example: /16/34322/22950.png
+         Zoom 16, column 34322, row 22950</code></pre>
+      </div>
+
+      <h2>Hands-On Exercise</h2>
+      <ol>
+        <li>Toggle <strong>"Show Tile Boundaries"</strong> to see the grid</li>
+        <li>Open <strong>DevTools Network tab</strong> (F12)</li>
+        <li>Pan/zoom the map and watch PNG requests appear</li>
+        <li>Notice how URL changes as you move (hash navigation)</li>
+      </ol>
+
+      <div class="hint-box">
+        <strong>Try This:</strong> Zoom in and out. Notice how higher zoom levels load smaller (more detailed) tiles. At zoom 16, each tile covers ~600m.
+      </div>
+
+      <h2>Key Observations</h2>
+      <ul>
+        <li>Tiles are <strong>256x256 pixels</strong> (or 512x512 for high-DPI)</li>
+        <li>The server returns <strong>images</strong>, not data</li>
+        <li>You <strong>cannot query</strong> what's in a raster tile</li>
+        <li>Style changes require <strong>re-rendering all tiles</strong></li>
+      </ul>
+
+      <div class="success-box">
+        <strong>Success Criteria:</strong> You can explain why pan/zoom causes network requests and why the map URL includes #z/lat/lng.
+      </div>
+
+      <div class="nav-links">
+        <a href="../index.html">&larr; Workshop Home</a>
+        <a href="02-vector-tiles.html">Next: Vector Tiles &rarr;</a>
+      </div>
+    </aside>
+
+    <!-- Map Content -->
+    <div class="task-content">
+      <div id="map"></div>
+
+      <!-- Map Controls Overlay -->
+      <div class="map-overlay bottom-left">
+        <h3>Tile Display</h3>
+        <label>
+          <input type="checkbox" id="showBoundaries" checked>
+          Show Tile Boundaries
+        </label>
+        <div class="stats">
+          <div>Zoom: <span id="zoomLevel">16</span></div>
+          <div>Center: <span id="centerCoords">8.54, 47.37</span></div>
+          <div>Tiles visible: ~<span id="tileCount">12</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../assets/workshop.js"></script>
+
+  <!-- Map Initialization -->
+  <script>
+    // Initialize map with raster tiles
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'osm-raster': {
+            type: 'raster',
+            tiles: [
+              'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          }
+        },
+        layers: [
+          {
+            id: 'osm-raster-layer',
+            type: 'raster',
+            source: 'osm-raster',
+            minzoom: 0,
+            maxzoom: 19
+          }
+        ]
+      },
+      center: [8.54, 47.37], // Zurich
+      zoom: 16,
+      hash: 'map'
+    });
+
+    // Show tile boundaries by default
+    map.showTileBoundaries = true;
+
+    // Toggle tile boundaries
+    document.getElementById('showBoundaries').addEventListener('change', (e) => {
+      map.showTileBoundaries = e.target.checked;
+    });
+
+    // Update stats display
+    function updateStats() {
+      const zoom = map.getZoom().toFixed(1);
+      const center = map.getCenter();
+      const bounds = map.getBounds();
+
+      // Estimate visible tiles
+      const tilesPerAxis = Math.ceil(Math.max(
+        window.innerWidth / 256,
+        window.innerHeight / 256
+      )) + 1;
+      const tileCount = tilesPerAxis * tilesPerAxis;
+
+      document.getElementById('zoomLevel').textContent = zoom;
+      document.getElementById('centerCoords').textContent =
+        `${center.lng.toFixed(4)}, ${center.lat.toFixed(4)}`;
+      document.getElementById('tileCount').textContent = tileCount;
+    }
+
+    map.on('move', updateStats);
+    map.on('zoom', updateStats);
+    map.on('load', updateStats);
+
+    // Add navigation controls
+    map.addControl(new maplibregl.NavigationControl());
+
+    // Console logging
+    console.log('%c=== Raster Tile Workshop ===', 'color: #d97706; font-size: 16px; font-weight: bold');
+    console.log('%cOpen the Network tab to see tile requests!', 'color: #22c55e');
+    console.log('Each tile URL follows the pattern: /{z}/{x}/{y}.png');
+  </script>
+</body>
+</html>

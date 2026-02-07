@@ -47,6 +47,19 @@ class Feature:
             xs = [c[0] for c in all_coords]
             ys = [c[1] for c in all_coords]
             return (min(xs), min(ys), max(xs), max(ys))
+        elif self.geometry_type == "LineString":
+            # LineString: coordinates is list of [x, y] points
+            xs = [c[0] for c in self.coordinates]
+            ys = [c[1] for c in self.coordinates]
+            return (min(xs), min(ys), max(xs), max(ys))
+        elif self.geometry_type == "MultiLineString":
+            # MultiLineString: coordinates is list of lines
+            all_coords = []
+            for line in self.coordinates:
+                all_coords.extend(line)
+            xs = [c[0] for c in all_coords]
+            ys = [c[1] for c in all_coords]
+            return (min(xs), min(ys), max(xs), max(ys))
         else:
             raise ValueError(f"Unsupported geometry type: {self.geometry_type}")
 
@@ -241,6 +254,47 @@ def estimate_tree_height(crown_diameter: float) -> float:
     # Most trees are 1.2-1.8x their crown diameter in height
     # Cap at 35m (typical max for urban trees)
     return min(crown_diameter * 1.5, 35.0)
+
+
+def load_streets(
+    path: Path,
+    width_field: str = "width",
+) -> VectorSource:
+    """Load street centerlines from GeoJSON.
+
+    Streets are LineString geometries representing road centerlines.
+    The width field contains the road width in meters for buffering.
+
+    Args:
+        path: Path to streets GeoJSON
+        width_field: Property containing road width in meters
+
+    Returns:
+        VectorSource ready for queries
+    """
+    return VectorSource(path, width_field)
+
+
+def load_water_bodies(
+    path: Path,
+    width_field: str = "width",
+) -> VectorSource:
+    """Load water bodies from GeoJSON.
+
+    Water bodies can be:
+    - Polygon/MultiPolygon: Lakes, ponds (use directly)
+    - LineString/MultiLineString: Rivers, streams (need buffering)
+
+    The width field contains river width for LineString features.
+
+    Args:
+        path: Path to water bodies GeoJSON
+        width_field: Property containing river width in meters
+
+    Returns:
+        VectorSource ready for queries
+    """
+    return VectorSource(path, width_field)
 
 
 def polygon_to_pixel_mask(

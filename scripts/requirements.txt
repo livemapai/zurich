@@ -17,6 +17,9 @@ pillow>=10.0.0
 shapely>=2.0.0
 geojson>=3.0.0
 
+# XML parsing (for WC Guide toilets data)
+lxml>=5.0.0
+
 # GPKG/GeoPackage processing
 geopandas>=0.14.0
 fiona>=1.9.0
@@ -27,6 +30,7 @@ tqdm>=4.66.0
 # Tile pipeline (optional but recommended)
 rtree>=1.0.0        # Spatial indexing for vector queries
 pysolar>=0.10       # Sun position calculations
+noise>=1.2.2        # Perlin noise for hand-drawn wobble effect
 
 # Testing
 pytest>=7.4.0
@@ -36,7 +40,11 @@ pytest-cov>=4.1.0
 # Uses existing deps: requests, numpy, pillow, scipy
 # Requires API keys:
 #   - GOOGLE_API_KEY for Gemini (https://aistudio.google.com)
+#   - OPENAI_API_KEY for GPT Image (https://platform.openai.com)
 #   - REPLICATE_API_TOKEN for Stable Diffusion (https://replicate.com)
+
+# LiteLLM - multi-provider AI abstraction
+litellm>=1.76.0     # Unified API for Gemini, OpenAI, Vertex AI image generation
 
 # Stable Diffusion via Replicate (for ControlNet Depth pipeline)
 replicate>=0.25.0

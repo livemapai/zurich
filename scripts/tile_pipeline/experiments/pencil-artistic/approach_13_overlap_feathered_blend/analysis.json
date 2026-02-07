@@ -1,0 +1,17 @@
+{
+  "approach_id": 13,
+  "approach_name": "overlap_feathered_blend",
+  "elapsed_seconds": 47.33018660545349,
+  "api_calls": 6,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 25.745805740356445,
+    "horizontal_score": 24.860170364379883,
+    "vertical_score": 26.742145538330078,
+    "worst_seam": {
+      "tiles": "B-C",
+      "type": "horizontal",
+      "mean_diff": 52.69970703125
+    }
+  }
+}

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task 4: PMTiles - MapLibre Workshop</title>
+
+  <!-- MapLibre + PMTiles -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="task-layout">
+    <!-- Sidebar -->
+    <aside class="task-sidebar">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge">Task 4 of 7</span>
+      <h1>PMTiles: Serverless Vector Tiles</h1>
+
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>Understand how PMTiles enables serverless tile hosting using HTTP range requests.</p>
+      </div>
+
+      <h2>The Problem with Traditional Tiles</h2>
+      <p>Traditional tile hosting requires:</p>
+      <ul>
+        <li>A tile server (like Martin, TileServer GL)</li>
+        <li>Or millions of individual files (one per tile!)</li>
+        <li>Or a database with special indexing</li>
+      </ul>
+      <p>This is complex and expensive to host and maintain.</p>
+
+      <h2>PMTiles Solution</h2>
+      <p><strong>PMTiles</strong> packs ALL tiles into a <strong>single file</strong> with a special index that allows random access via HTTP range requests.</p>
+
+      <div class="code-block" data-language="Architecture">
+        <pre><code>world.pmtiles (single file, ~50MB)
++----------------------------------------+
+| Header: metadata, bounds, zoom range   |
+| Index: tile_id -> byte_offset          |
+| Data: compressed tile bytes            |
++----------------------------------------+
+
+Client wants tile (z=5, x=10, y=15):
+1. Calculate tile ID
+2. Look up byte offset in index
+3. HTTP Range: bytes=123456-234567
+4. Server returns ONLY those bytes!</code></pre>
+      </div>
+
+      <h2>Key Benefits</h2>
+      <ul>
+        <li><strong>No tile server needed</strong> - just put on S3, CloudFlare, GitHub</li>
+        <li><strong>Single file</strong> - easier to manage than millions of tiles</li>
+        <li><strong>CDN-optimized</strong> - range requests are cacheable</li>
+        <li><strong>Cloud-native</strong> - works with object storage</li>
+      </ul>
+
+      <h2>How It Works</h2>
+      <div class="code-block" data-language="JavaScript">
+        <pre><code>// Register PMTiles protocol
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
+// Use pmtiles:// URLs in your style
+{
+  "sources": {
+    "protomaps": {
+      "type": "vector",
+      "url": "pmtiles://https://example.com/world.pmtiles"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <div class="hint-box">
+        <strong>Watch the Network Tab:</strong> Notice the <code>Range</code> header in requests! The browser only downloads the specific bytes needed for visible tiles.
+      </div>
+
+      <h2>Hands-On Exercise</h2>
+      <ol>
+        <li>Open DevTools Network tab</li>
+        <li>Pan/zoom the map</li>
+        <li>Click on a <code>.pmtiles</code> request</li>
+        <li>Look at the <code>Range</code> request header</li>
+        <li>Look at the <code>Content-Range</code> response header</li>
+      </ol>
+
+      <div class="success-box">
+        <strong>Success Criteria:</strong> You can explain how PMTiles enables serverless tile hosting and can identify range requests in the Network tab.
+      </div>
+
+      <h2>Creating PMTiles</h2>
+      <div class="code-block" data-language="bash">
+        <pre><code># Convert MBTiles to PMTiles
+pmtiles convert input.mbtiles output.pmtiles
+
+# From tippecanoe output
+tippecanoe -o data.mbtiles input.geojson
+pmtiles convert data.mbtiles data.pmtiles
+
+# Upload to any static host!
+aws s3 cp data.pmtiles s3://my-bucket/</code></pre>
+      </div>
+
+      <div class="nav-links">
+        <a href="03-maputnik/instructions.html">&larr; Previous: Maputnik</a>
+        <a href="05-planetiler/instructions.html">Next: Planetiler &rarr;</a>
+      </div>
+    </aside>
+
+    <!-- Map Content -->
+    <div class="task-content">
+      <div id="map"></div>
+
+      <!-- Map Controls Overlay -->
+      <div class="map-overlay top-left">
+        <h3>PMTiles Source Info</h3>
+        <div class="stats">
+          <div><span style="color: var(--color-text-muted);">Source:</span> Protomaps Basemap</div>
+          <div><span style="color: var(--color-text-muted);">Format:</span> <span style="color: var(--color-success);">PMTiles</span></div>
+          <div><span style="color: var(--color-text-muted);">Protocol:</span> HTTP Range Requests</div>
+          <div><span style="color: var(--color-text-muted);">Server:</span> <span style="color: var(--color-success);">None (CDN only)</span></div>
+        </div>
+        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--color-border); font-size: 0.75rem; color: var(--color-text-muted);">
+          Open Network tab to see Range requests!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../assets/workshop.js"></script>
+
+  <!-- Map Initialization -->
+  <script>
+    // Register PMTiles protocol handler
+    const protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol('pmtiles', protocol.tile);
+
+    // PMTiles source URL (Protomaps basemap - free for demo)
+    const PMTILES_URL = 'https://build.protomaps.com/20240805.pmtiles';
+
+    // Initialize map with PMTiles source
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        glyphs: 'https://cdn.protomaps.com/fonts/pbf/{fontstack}/{range}.pbf',
+        sources: {
+          'protomaps': {
+            type: 'vector',
+            url: `pmtiles://${PMTILES_URL}`,
+            attribution: '<a href="https://protomaps.com">Protomaps</a> | <a href="https://openstreetmap.org">OSM</a>'
+          }
+        },
+        layers: [
+          {
+            id: 'background',
+            type: 'background',
+            paint: { 'background-color': '#1c1917' }
+          },
+          {
+            id: 'water',
+            type: 'fill',
+            source: 'protomaps',
+            'source-layer': 'water',
+            paint: { 'fill-color': '#193d5a' }
+          },
+          {
+            id: 'landuse-park',
+            type: 'fill',
+            source: 'protomaps',
+            'source-layer': 'landuse',
+            filter: ['==', ['get', 'pmap:kind'], 'park'],
+            paint: { 'fill-color': '#1d3d2d', 'fill-opacity': 0.7 }
+          },
+          {
+            id: 'buildings',
+            type: 'fill',
+            source: 'protomaps',
+            'source-layer': 'buildings',
+            paint: {
+              'fill-color': '#2a2a4a',
+              'fill-opacity': 0.8
+            }
+          },
+          {
+            id: 'roads-highway',
+            type: 'line',
+            source: 'protomaps',
+            'source-layer': 'roads',
+            filter: ['==', ['get', 'pmap:kind'], 'highway'],
+            paint: {
+              'line-color': '#d97706',
+              'line-width': ['interpolate', ['linear'], ['zoom'], 8, 1, 16, 6]
+            }
+          },
+          {
+            id: 'roads-major',
+            type: 'line',
+            source: 'protomaps',
+            'source-layer': 'roads',
+            filter: ['in', ['get', 'pmap:kind'], ['literal', ['major_road', 'medium_road']]],
+            paint: {
+              'line-color': '#4a4a6a',
+              'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 16, 3]
+            }
+          },
+          {
+            id: 'roads-minor',
+            type: 'line',
+            source: 'protomaps',
+            'source-layer': 'roads',
+            filter: ['==', ['get', 'pmap:kind'], 'minor_road'],
+            minzoom: 13,
+            paint: {
+              'line-color': '#3a3a5a',
+              'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 16, 2]
+            }
+          },
+          {
+            id: 'place-labels',
+            type: 'symbol',
+            source: 'protomaps',
+            'source-layer': 'places',
+            filter: ['in', ['get', 'pmap:kind'], ['literal', ['city', 'town', 'village']]],
+            layout: {
+              'text-field': ['get', 'name'],
+              'text-font': ['Noto Sans Regular'],
+              'text-size': ['interpolate', ['linear'], ['zoom'], 6, 10, 14, 16]
+            },
+            paint: {
+              'text-color': '#ffffff',
+              'text-halo-color': '#1c1917',
+              'text-halo-width': 1.5
+            }
+          }
+        ]
+      },
+      center: [8.54, 47.37],
+      zoom: 12,
+      hash: 'map'
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+
+    // Console logging
+    console.log('%c=== PMTiles Workshop ===', 'color: #22c55e; font-size: 16px; font-weight: bold');
+    console.log('%cServerless vector tiles via HTTP Range Requests!', 'color: #0ea5e9');
+    console.log('');
+    console.log('Watch the Network tab for Range requests:');
+    console.log('  Request Header: Range: bytes=123456-234567');
+    console.log('  Response Header: Content-Range: bytes 123456-234567/50000000');
+    console.log('');
+    console.log('PMTiles URL:', PMTILES_URL);
+  </script>
+</body>
+</html>

@@ -15,14 +15,24 @@ import type { StylesManifest, StylesViewerProps } from './types';
 const ZURICH_CENTER: [number, number] = [8.5417, 47.3769];
 const DEFAULT_ZOOM = 16; // Match AI tile zoom level
 
-// All possible style names for cleanup (ai-*, sd-*, and hybrid-* prefixes)
+// All possible style names for cleanup (ai-*, sd-*, hybrid-*, nano-*, pencil-* prefixes)
 const ALL_STYLES = [
   'ai-winter', 'ai-cyberpunk', 'ai-watercolor', 'ai-autumn', 'ai-blueprint', 'ai-retro',
   'sd-winter', 'sd-cyberpunk', 'sd-watercolor', 'sd-autumn', 'sd-blueprint', 'sd-retro',
   // Hybrid Blender-rendered styles (data-driven)
   'hybrid-autumn', 'hybrid-winter', 'hybrid-spring', 'hybrid-summer',
   'hybrid-golden_hour', 'hybrid-night', 'hybrid-cyberpunk',
-  'hybrid-isometric', 'hybrid-isometric_golden',
+  'hybrid-isometric', 'hybrid-isometric_golden', 'hybrid-textured',
+  // Nano Banana styles
+  'nano-cyberpunk', 'nano-winter', 'nano-winter-stitched', 'nano-winter-stitched-v2', 'nano-cyberpunk-v2',
+  // Pencil sketch styles
+  'pencil-styler', 'pencil-stitcher', 'pencil-v2', 'pencil-artistic',
+  'pencil-deep-styler', 'pencil-deep-stitcher', 'pencil-deep-v2', 'pencil-master',
+  'pencil-master-ref', 'pencil-master-stitcher',
+  // New styles from pencil
+  'watercolor-zurich', 'photo-zurich', 'colored-pencil-zurich',
+  'watercolor-from-pencil', 'photo-from-pencil',
+  'watercolor-stitcher', 'photo-stitcher', 'colored-pencil-stitcher',
   'satellite',
   // Legacy names for cleanup
   'winter', 'cyberpunk', 'watercolor', 'autumn', 'blueprint', 'retro',

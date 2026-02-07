@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapLibre Pipeline Workshop</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="workshop-header">
+      <div class="workshop-badge">Workshop</div>
+      <h1 class="workshop-title">MapLibre Pipeline</h1>
+      <p class="workshop-subtitle">
+        A hands-on workshop teaching the complete journey from raw vector data
+        to rendered tiles in a browser. No prior tile experience required.
+      </p>
+      <div class="learning-goal">
+        <h3>Learning Goal</h3>
+        <p>"I can take any vector data and turn it into map tiles that display in a browser."</p>
+      </div>
+    </header>
+
+    <!-- Interactive Pipeline Visualization -->
+    <div class="pipeline-visual">
+      <div class="pipeline-stage" data-task="01-raster-tiles">
+        <span class="pipeline-stage-icon">&#128196;</span>
+        <span class="pipeline-stage-label">Raw Data</span>
+      </div>
+      <span class="pipeline-arrow">&#10132;</span>
+      <div class="pipeline-stage" data-task="05-planetiler">
+        <span class="pipeline-stage-icon">&#9881;</span>
+        <span class="pipeline-stage-label">Planetiler</span>
+      </div>
+      <span class="pipeline-arrow">&#10132;</span>
+      <div class="pipeline-stage" data-task="06-mvt-inspect">
+        <span class="pipeline-stage-icon">&#128230;</span>
+        <span class="pipeline-stage-label">MVT Tiles</span>
+      </div>
+      <span class="pipeline-arrow">&#10132;</span>
+      <div class="pipeline-stage" data-task="04-pmtiles">
+        <span class="pipeline-stage-icon">&#9729;</span>
+        <span class="pipeline-stage-label">HTTP/CDN</span>
+      </div>
+      <span class="pipeline-arrow">&#10132;</span>
+      <div class="pipeline-stage" data-task="02-vector-tiles">
+        <span class="pipeline-stage-icon">&#127760;</span>
+        <span class="pipeline-stage-label">Browser</span>
+      </div>
+      <span class="pipeline-arrow">&#10132;</span>
+      <div class="pipeline-stage completed" data-task="capstone">
+        <span class="pipeline-stage-icon">&#10024;</span>
+        <span class="pipeline-stage-label">Pixels!</span>
+      </div>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="quick-start">
+      <h3>Quick Start</h3>
+      <div class="code-block" data-language="bash">
+        <pre><code># Serve the workshop locally
+cd rendering-workshop
+npx http-server . -p 3000 --cors
+
+# Open in browser
+open http://localhost:3000</code></pre>
+      </div>
+    </div>
+
+    <!-- Collapsible Workflow Diagram -->
+    <details class="workflow-diagram">
+      <summary>
+        <span class="summary-icon">+</span>
+        How It All Works: The Complete Pipeline
+      </summary>
+      <div class="workflow-content">
+        <pre class="ascii-diagram">
+<span class="stage-label">STAGE 1: RAW DATA SOURCES</span>
+
+   OpenStreetMap    GeoJSON       Shapefiles     PostGIS
+      .osm.pbf      .geojson        .shp        Database
+          |            |              |            |
+          +------------+--------------+------------+
+                              |
+                              v
+<span class="stage-label">STAGE 2: TILE GENERATION</span>                              <span class="task-ref">[Task 5]</span>
+
+   +-----------------------------------------------------------+
+   |                 <span class="tool-name">PLANETILER / TIPPECANOE</span>                   |
+   |-----------------------------------------------------------|
+   |  1. PARSE raw data (read geometry + attributes)           |
+   |  2. FILTER by OSM tags (keep roads, buildings, water...)  |
+   |  3. CLIP geometry to tile boundaries (Z/X/Y grid)         |
+   |  4. SIMPLIFY at each zoom level (reduce vertices)         |
+   |  5. ENCODE geometry as commands (MoveTo, LineTo, Close)   |
+   |  6. SERIALIZE to Protobuf binary (.pbf)                   |
+   +-----------------------------------------------------------+
+                              |
+                              v
+<span class="stage-label">STAGE 3: TILE STORAGE</span>                                    <span class="task-ref">[Task 4]</span>
+
+        <span class="format">.mbtiles</span>                        <span class="format">.pmtiles</span>
+     (SQLite DB)                    (Single HTTP file)
+     Needs server                   CDN-ready, no server
+          |                               |
+          +---------------+---------------+
+                          |
+                    <span class="format">TileJSON</span> <span class="task-ref">[Task 7]</span>
+                  (Metadata)
+                          |
+                          v
+<span class="stage-label">STAGE 4: HTTP DELIVERY</span>                                   <span class="task-ref">[Task 6]</span>
+
+   Browser requests: GET /tiles/14/8567/5765.pbf
+   Response: <span class="format">.pbf file</span> (5-20 KB) - Protobuf binary
+                          |
+                          v
+<span class="stage-label">STAGE 5: CLIENT DECODING</span>                                 <span class="task-ref">[Task 2]</span>
+
+   Binary bytes --> Parsed structure --> JavaScript objects
+                          |
+                          v
+<span class="stage-label">STAGE 6: STYLE APPLICATION</span>                               <span class="task-ref">[Task 3]</span>
+
+   Style JSON defines how to render each layer
+                          |
+                          v
+                   +--------------+
+                   | <span class="output">PIXELS!</span>      |
+                   +--------------+
+        </pre>
+
+        <h4>Key Terminology</h4>
+        <table class="terminology-table">
+          <tr><th>Term</th><th>What It Is</th><th>Analogy</th></tr>
+          <tr><td><strong>MVT</strong></td><td>Mapbox Vector Tile specification</td><td>A recipe</td></tr>
+          <tr><td><strong>Protobuf</strong></td><td>Google's binary serialization format</td><td>A cooking method</td></tr>
+          <tr><td><strong>.pbf</strong></td><td>File extension for Protobuf files</td><td>The dish name</td></tr>
+          <tr><td><strong>Planetiler</strong></td><td>Tool that generates MVT tiles</td><td>A chef</td></tr>
+          <tr><td><strong>PMTiles</strong></td><td>Container format for storing tiles</td><td>A meal box</td></tr>
+          <tr><td><strong>TileJSON</strong></td><td>Metadata describing tile contents</td><td>The menu</td></tr>
+        </table>
+      </div>
+    </details>
+
+    <!-- Workshop Tasks -->
+    <h2 class="section-title">Workshop Tasks</h2>
+
+    <div class="tasks-grid">
+      <a href="tasks/01-raster-tiles.html" class="task-card" data-task-id="01-raster-tiles">
+        <div class="task-card-header">
+          <span class="task-number">01</span>
+          <span class="task-time">15 min</span>
+        </div>
+        <h3>Raster Tiles</h3>
+        <p>Understand how web maps load pre-rendered image tiles from a server.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="tags">
+            <span class="tag">PNG/JPEG</span>
+            <span class="tag">Z/X/Y</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="tasks/02-vector-tiles.html" class="task-card" data-task-id="02-vector-tiles">
+        <div class="task-card-header">
+          <span class="task-number">02</span>
+          <span class="task-time">20 min</span>
+        </div>
+        <h3>Vector Tiles</h3>
+        <p>Learn how vector tiles contain geometry data that's rendered client-side.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="tags">
+            <span class="tag">source-layer</span>
+            <span class="tag">Dynamic</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="tasks/03-maputnik/instructions.html" class="task-card" data-task-id="03-maputnik">
+        <div class="task-card-header">
+          <span class="task-number">03</span>
+          <span class="task-time">25 min</span>
+        </div>
+        <h3>Maputnik Style Editor</h3>
+        <p>Use the visual style editor to create and modify MapLibre styles.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="tags">
+            <span class="tag">Maputnik</span>
+            <span class="tag">Expressions</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="tasks/04-pmtiles.html" class="task-card" data-task-id="04-pmtiles">
+        <div class="task-card-header">
+          <span class="task-number">04</span>
+          <span class="task-time">20 min</span>
+        </div>
+        <h3>PMTiles</h3>
+        <p>Discover serverless tile hosting using HTTP range requests.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="tags">
+            <span class="tag">PMTiles</span>
+            <span class="tag">CDN</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="tasks/05-planetiler/instructions.html" class="task-card" data-task-id="05-planetiler">
+        <div class="task-card-header">
+          <span class="task-number">05</span>
+          <span class="task-time">30 min</span>
+        </div>
+        <h3>Planetiler</h3>
+        <p>Generate vector tiles from OpenStreetMap data.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span></span>
+          </div>
+          <div class="tags">
+            <span class="tag">OSM</span>
+            <span class="tag">Java</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="tasks/06-mvt-inspect.html" class="task-card" data-task-id="06-mvt-inspect">
+        <div class="task-card-header">
+          <span class="task-number">06</span>
+          <span class="task-time">20 min</span>
+        </div>
+        <h3>MVT Inspection</h3>
+        <p>Look inside the binary structure of vector tiles.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span></span>
+          </div>
+          <div class="tags">
+            <span class="tag">Protobuf</span>
+            <span class="tag">Binary</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="tasks/07-tilejson.html" class="task-card" data-task-id="07-tilejson">
+        <div class="task-card-header">
+          <span class="task-number">07</span>
+          <span class="task-time">15 min</span>
+        </div>
+        <h3>TileJSON Exploration</h3>
+        <p>Understand tile metadata and schema discovery.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="tags">
+            <span class="tag">TileJSON</span>
+            <span class="tag">Schema</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="capstone/index.html" class="task-card capstone" data-task-id="capstone">
+        <div class="task-card-header">
+          <span class="task-number">&#9733;</span>
+          <span class="task-time">30 min</span>
+        </div>
+        <h3>Capstone: End-to-End</h3>
+        <p>Put it all together: create tiles from your own GeoJSON and display them.</p>
+        <div class="task-card-footer">
+          <div class="task-difficulty">
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span class="filled"></span>
+            <span class="filled"></span>
+          </div>
+          <div class="tags">
+            <span class="tag">Full Pipeline</span>
+            <span class="tag">Custom Data</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Prerequisites -->
+    <div class="prereqs">
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>Modern browser with DevTools (Chrome, Firefox, Safari)</li>
+        <li>Node.js 18+ (for serving files locally)</li>
+        <li><code>npx http-server</code> or similar static file server</li>
+        <li>Java 21+ (only for Task 5: Planetiler)</li>
+      </ul>
+    </div>
+
+    <!-- Pipeline Stage Reference -->
+    <h2 class="section-title">Pipeline Stage Reference</h2>
+
+    <div class="tasks-grid">
+      <div class="card">
+        <h3>Stage 1: Data Sources</h3>
+        <p class="mb-0">Where geodata comes from: OSM, GeoJSON, Shapefiles, PostGIS.</p>
+        <div class="tags mt-md">
+          <span class="tag">Tasks: 1, 2</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Stage 2: Tile Generation</h3>
+        <p class="mb-0">Tools that create tiles: Planetiler, Tippecanoe, Martin.</p>
+        <div class="tags mt-md">
+          <span class="tag">Task: 5</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Stage 3: MVT Encoding</h3>
+        <p class="mb-0">Protobuf binary format, geometry commands, zigzag encoding.</p>
+        <div class="tags mt-md">
+          <span class="tag">Task: 6</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Stage 4: Schema/Layers</h3>
+        <p class="mb-0">TileJSON metadata, layer organization, field types.</p>
+        <div class="tags mt-md">
+          <span class="tag">Task: 7</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Stage 5: Style Spec</h3>
+        <p class="mb-0">MapLibre styling: sources, layers, paint properties, expressions.</p>
+        <div class="tags mt-md">
+          <span class="tag">Tasks: 2, 3</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Stage 6: WebGL Render</h3>
+        <p class="mb-0">GPU pipeline: tessellation, shaders, draw calls.</p>
+        <div class="tags mt-md">
+          <span class="tag">Pipeline Viewer</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="assets/workshop.js"></script>
+
+  <!-- Pipeline Stage Interactivity -->
+  <script>
+    // Make pipeline stages clickable
+    document.querySelectorAll('.pipeline-stage[data-task]').forEach(stage => {
+      stage.addEventListener('click', () => {
+        const taskId = stage.dataset.task;
+        const card = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.style.animation = 'none';
+          card.offsetHeight; // Trigger reflow
+          card.style.animation = 'pulse 0.5s ease-out';
+        }
+      });
+
+      // Update stage completion status
+      const taskId = stage.dataset.task;
+      if (Workshop.progress.completed.includes(taskId)) {
+        stage.classList.add('completed');
+      }
+    });
+
+    // Add pulse animation for highlighting
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(217, 119, 6, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

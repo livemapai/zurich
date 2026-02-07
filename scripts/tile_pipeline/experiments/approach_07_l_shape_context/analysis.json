@@ -1,0 +1,8 @@
+{
+  "approach_id": 7,
+  "approach_name": "l_shape_context",
+  "elapsed_seconds": 95.00570297241211,
+  "api_calls": 11,
+  "tiles_generated": 12,
+  "seam_analysis": {
+    "overall_score": 

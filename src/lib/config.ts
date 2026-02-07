@@ -27,6 +27,48 @@ function getDataUrl(localPath: string, useBlobForLargeFiles = false): string {
 	return localPath;
 }
 
+/** City-specific configurations */
+export const CITIES = {
+	zurich: {
+		name: "Zürich",
+		center: { longitude: 8.5417, latitude: 47.3769 },
+		baseElevation: 408,
+		bounds: {
+			min_lng: 8.448,
+			max_lng: 8.626,
+			min_lat: 47.320,
+			max_lat: 47.435,
+		},
+		boundsLV95: {
+			min_e: 2676000,
+			max_e: 2689000,
+			min_n: 1241000,
+			max_n: 1254000,
+		},
+		transitOperator: "VBZ",
+	},
+	lucerne: {
+		name: "Luzern",
+		center: { longitude: 8.3093, latitude: 47.0502 },
+		baseElevation: 436,
+		bounds: {
+			min_lng: 8.20,
+			max_lng: 8.45,
+			min_lat: 46.95,
+			max_lat: 47.10,
+		},
+		boundsLV95: {
+			min_e: 2655000,
+			max_e: 2680000,
+			min_n: 1200000,
+			max_n: 1225000,
+		},
+		transitOperator: "VBL",
+	},
+} as const;
+
+export type CityId = keyof typeof CITIES;
+
 export const CONFIG = {
 	/** Rendering settings */
 	render: {
@@ -86,6 +128,8 @@ export const CONFIG = {
 	/** Data paths (v=2 cache bust for terrain elevation update, v=4 for dual-mode transit) */
 	data: {
 		buildings: "/data/zurich-buildings.geojson?v=2",
+		/** LOD2 roof faces from Stadt Zürich 3D building data */
+		roofs: "/data/zurich-roofs.geojson",
 		trees: "/data/zurich-trees.geojson?v=2",
 		lights: "/data/zurich-lights.geojson?v=2",
 		tramTracks: "/data/zurich-tram-tracks.geojson",
@@ -101,8 +145,26 @@ export const CONFIG = {
 		fountains: "/data/zurich-fountains.geojson?v=2",
 		benches: "/data/zurich-benches.geojson?v=2",
 		toilets: "/data/zurich-toilets.geojson?v=2",
+		streets: "/data/zurich-streets.geojson",
+		water: "/data/zurich-water.geojson",
 		terrain: "/data/terrain.png",
 		tileIndex: "/data/tiles/buildings/tile-index.json",
+	},
+
+	/** Lucerne-specific data paths */
+	lucerneData: {
+		buildings: "/data/lucerne/lucerne-buildings.geojson",
+		trees: "/data/lucerne/lucerne-trees.geojson",
+		fountains: "/data/lucerne/lucerne-fountains.geojson",
+		benches: "/data/lucerne/lucerne-benches.geojson",
+		toilets: "/data/lucerne/lucerne-toilets.geojson",
+		heritage: "/data/lucerne/lucerne-heritage.geojson",
+		trails: "/data/lucerne/lucerne-trails.geojson",
+		/** VBL transit trips */
+		transitTrips: "/data/lucerne/lucerne-vbl-trips.json",
+		/** Binary GTFS (if generated) */
+		transitBinary: "/data/lucerne/gtfs/lucerne-gtfs.bin",
+		transitManifest: "/data/lucerne/gtfs/lucerne-gtfs.manifest.json",
 	},
 
 	/** Debug settings */

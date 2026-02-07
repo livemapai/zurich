@@ -1,0 +1,910 @@
+/**
+ * Pipeline Page CSS
+ *
+ * Dark theme styling for the MapLibre vector tile pipeline
+ * educational visualization with stage navigation, code panels,
+ * and interactive diagrams.
+ */
+
+/* ============================================
+   Layout Container
+   ============================================ */
+
+.pipeline-page {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0a0a12 0%, #12121f 50%, #0a0a12 100%);
+  color: #e0e0e0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.pipeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: rgba(26, 26, 46, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.pipeline-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pipeline-title h1 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+
+.pipeline-title-icon {
+  width: 24px;
+  height: 24px;
+  color: #88c0ff;
+}
+
+.pipeline-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pipeline-help-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* ============================================
+   Stage Navigation (Top Bar)
+   ============================================ */
+
+.stage-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.5rem;
+  gap: 0.5rem;
+  background: rgba(20, 20, 35, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stage-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.stage-nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(136, 192, 255, 0.3);
+}
+
+.stage-nav-item.active {
+  background: rgba(136, 192, 255, 0.15);
+  border-color: rgba(136, 192, 255, 0.5);
+}
+
+.stage-nav-item.visited {
+  border-color: rgba(136, 192, 255, 0.2);
+}
+
+.stage-nav-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.25s;
+}
+
+.stage-nav-item.active .stage-nav-number {
+  background: #88c0ff;
+  color: #0a0a12;
+}
+
+.stage-nav-item.visited .stage-nav-number {
+  background: rgba(136, 192, 255, 0.3);
+  color: #88c0ff;
+}
+
+.stage-nav-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stage-nav-item.active .stage-nav-label {
+  color: #fff;
+}
+
+.stage-nav-connector {
+  width: 24px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1px;
+}
+
+.stage-nav-connector.visited {
+  background: rgba(136, 192, 255, 0.3);
+}
+
+/* ============================================
+   Main Content Area
+   ============================================ */
+
+.pipeline-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Visualization Panel (Left) */
+.pipeline-visualization {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.visualization-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Info Panel (Right) */
+.pipeline-info-panel {
+  width: 380px;
+  min-width: 380px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(26, 26, 46, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.info-panel-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.info-panel-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.info-panel-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.info-panel-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+/* Stage Title */
+.stage-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stage-title h2 {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.stage-badge {
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(136, 192, 255, 0.15);
+  color: #88c0ff;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Description */
+.stage-description {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1.25rem;
+}
+
+/* Insight Box */
+.stage-insight {
+  background: linear-gradient(135deg, rgba(136, 192, 255, 0.08) 0%, rgba(136, 192, 255, 0.03) 100%);
+  border: 1px solid rgba(136, 192, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.insight-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #88c0ff;
+  font-weight: 600;
+}
+
+.insight-star {
+  font-size: 1rem;
+}
+
+.insight-text {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
+  font-style: italic;
+}
+
+/* ============================================
+   Code Panel
+   ============================================ */
+
+.code-panel {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.code-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.code-panel-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.code-panel-language {
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.5rem;
+  background: rgba(136, 192, 255, 0.1);
+  color: #88c0ff;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.code-panel-content {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.code-panel-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.code-panel-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+/* CodeMirror Theme Overrides */
+.code-panel .cm-editor {
+  background: transparent !important;
+  font-size: 0.8125rem;
+}
+
+.code-panel .cm-gutters {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.code-panel .cm-activeLineGutter {
+  background: rgba(136, 192, 255, 0.1) !important;
+}
+
+.code-panel .cm-activeLine {
+  background: rgba(136, 192, 255, 0.05) !important;
+}
+
+/* Code Error Display */
+.code-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-top: 1px solid rgba(239, 68, 68, 0.2);
+  font-size: 0.8125rem;
+  color: #fca5a5;
+}
+
+.error-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+/* ============================================
+   Bottom Navigation
+   ============================================ */
+
+.pipeline-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(26, 26, 46, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.nav-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nav-button.primary {
+  background: rgba(136, 192, 255, 0.15);
+  border-color: rgba(136, 192, 255, 0.3);
+  color: #88c0ff;
+}
+
+.nav-button.primary:hover:not(:disabled) {
+  background: rgba(136, 192, 255, 0.25);
+  border-color: rgba(136, 192, 255, 0.5);
+  color: #fff;
+}
+
+.stage-indicator {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.stage-indicator strong {
+  color: #fff;
+}
+
+/* ============================================
+   SVG Diagram Styles
+   ============================================ */
+
+.flow-diagram {
+  width: 100%;
+  height: 100%;
+  max-height: 400px;
+}
+
+.flow-diagram text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  fill: #fff;
+}
+
+.flow-diagram .node-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.flow-diagram .node-sublabel {
+  font-size: 10px;
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================
+   Stage-Specific Styles
+   ============================================ */
+
+/* Data Sources Stage */
+.data-sources-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 700px;
+}
+
+.data-source-card {
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.data-source-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(136, 192, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.data-source-card.active {
+  background: rgba(136, 192, 255, 0.1);
+  border-color: rgba(136, 192, 255, 0.4);
+}
+
+.data-source-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.75rem;
+  color: #88c0ff;
+}
+
+.data-source-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.375rem;
+}
+
+.data-source-format {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'SF Mono', Monaco, monospace;
+}
+
+/* Tile Pyramid Stage */
+.tile-pyramid-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  width: 100%;
+}
+
+.tile-pyramid-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.zoom-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.zoom-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #88c0ff;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.zoom-slider {
+  width: 200px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #88c0ff;
+  border-radius: 50%;
+  cursor: grab;
+}
+
+.zoom-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+
+/* Geometry Visualizer */
+.geometry-visualizer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+.geometry-grid {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.step-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.step-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.step-btn:hover:not(:disabled) {
+  background: rgba(136, 192, 255, 0.15);
+  border-color: rgba(136, 192, 255, 0.3);
+}
+
+.step-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.current-command {
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.875rem;
+  color: #88c0ff;
+}
+
+/* Layer Stack */
+.layer-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.layer-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.layer-item.active {
+  background: rgba(136, 192, 255, 0.1);
+  border-color: rgba(136, 192, 255, 0.3);
+}
+
+.layer-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.layer-name {
+  font-weight: 500;
+  color: #fff;
+}
+
+.layer-type {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'SF Mono', Monaco, monospace;
+}
+
+/* Drag Handle */
+.drag-handle {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: grab;
+  font-size: 1rem;
+  letter-spacing: -2px;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Style Editor */
+.style-editor-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.style-editor-code {
+  width: 45%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.style-editor-map {
+  flex: 1;
+  position: relative;
+}
+
+/* Render Stats */
+.render-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  max-width: 400px;
+}
+
+.render-stat {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.render-stat-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.375rem;
+}
+
+.render-stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.render-stat-value.warning {
+  color: #fbbf24;
+}
+
+.render-stat-value.danger {
+  color: #f87171;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stage-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(136, 192, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(136, 192, 255, 0);
+  }
+}
+
+.pulse-animation {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ============================================
+   Workshop Links
+   ============================================ */
+
+.stage-workshop {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.08) 0%, rgba(255, 140, 0, 0.03) 100%);
+  border: 1px solid rgba(255, 140, 0, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.workshop-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #ff8c00;
+  font-weight: 600;
+}
+
+.workshop-icon {
+  font-size: 1rem;
+}
+
+.workshop-description {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.workshop-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.workshop-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.workshop-link:hover {
+  background: rgba(255, 140, 0, 0.15);
+  border-color: rgba(255, 140, 0, 0.3);
+}
+
+.workshop-link .task-number {
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.5rem;
+  background: rgba(255, 140, 0, 0.15);
+  color: #ff8c00;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.workshop-link .task-title {
+  font-size: 0.875rem;
+  color: #fff;
+  flex: 1;
+}
+
+.workshop-link svg {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.workshop-link:hover svg {
+  color: #ff8c00;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .pipeline-content {
+    flex-direction: column;
+  }
+
+  .pipeline-info-panel {
+    width: 100%;
+    min-width: 100%;
+    max-height: 40vh;
+  }
+
+  .stage-navigation {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+  }
+
+  .stage-nav-label {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .pipeline-header {
+    padding: 0.5rem 1rem;
+  }
+
+  .pipeline-title h1 {
+    font-size: 1rem;
+  }
+
+  .stage-navigation {
+    gap: 0.25rem;
+  }
+
+  .stage-nav-item {
+    padding: 0.375rem 0.625rem;
+  }
+
+  .stage-nav-number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.6875rem;
+  }
+
+  .data-sources-grid {
+    grid-template-columns: 1fr;
+  }
+}

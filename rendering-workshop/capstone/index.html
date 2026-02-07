@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capstone: End-to-End Pipeline - MapLibre Workshop</title>
+
+  <!-- MapLibre + PMTiles -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="task-layout">
+    <!-- Sidebar -->
+    <aside class="task-sidebar">
+      <a href="../index.html" class="back-link">&larr; Back to Workshop</a>
+
+      <span class="task-badge capstone">Capstone Exercise</span>
+      <h1>End-to-End: GeoJSON to Browser</h1>
+
+      <p>
+        Put together everything you've learned! In this capstone, you'll either:
+      </p>
+      <ul>
+        <li><strong>Option A:</strong> Load your own PMTiles file (if you generated one)</li>
+        <li><strong>Option B:</strong> Load raw GeoJSON directly into MapLibre</li>
+      </ul>
+
+      <h2>Option A: Load PMTiles</h2>
+      <p>If you completed Task 5 (Planetiler) and have a <code>.pmtiles</code> file:</p>
+
+      <div class="file-upload" id="pmtilesUpload">
+        <input type="file" id="pmtilesFile" accept=".pmtiles">
+        <div class="file-upload-icon">&#128230;</div>
+        <p>Drop your .pmtiles file here<br>or click to browse</p>
+      </div>
+
+      <div id="pmtilesLoaded" class="loaded-file" style="display: none;">
+        <span class="loaded-file-icon">&#10003;</span>
+        <span class="loaded-file-name" id="pmtilesName">file.pmtiles</span>
+        <span class="loaded-file-size" id="pmtilesSize">0 MB</span>
+      </div>
+
+      <h2>Option B: Load GeoJSON</h2>
+      <p>Paste or edit GeoJSON to display directly (no tile generation needed):</p>
+
+      <div class="geojson-editor">
+        <textarea id="geojsonInput">{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "ETH Zurich Main Building",
+        "type": "university"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[8.5475, 47.3763], [8.5495, 47.3763], [8.5495, 47.3778], [8.5475, 47.3778], [8.5475, 47.3763]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Polyterrasse",
+        "type": "viewpoint"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [8.5483, 47.3765]
+      }
+    }
+  ]
+}</textarea>
+        <button class="btn btn-primary" style="margin-top: 0.75rem;" onclick="loadGeoJSON()">Load GeoJSON on Map</button>
+      </div>
+
+      <h2>The Pipeline Steps</h2>
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">1</span>
+          <h3>Data Source</h3>
+        </div>
+        <p>Load GeoJSON or PMTiles into MapLibre</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">2</span>
+          <h3>Parse & Index</h3>
+        </div>
+        <p>MapLibre parses geometry and builds spatial index</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-card-header">
+          <span class="step-number">3</span>
+          <h3>Style & Render</h3>
+        </div>
+        <p>Apply styles and render to canvas via WebGL</p>
+      </div>
+
+      <div class="success-box">
+        <strong>Key Takeaways</strong>
+        <p style="margin-bottom: 0; margin-top: 0.5rem;">
+          You've explored the full vector tile pipeline: from raw GeoJSON data,
+          through parsing and indexing, to styled WebGL rendering.
+        </p>
+      </div>
+
+      <div class="nav-links">
+        <a href="../tasks/07-tilejson.html">&larr; Previous: TileJSON</a>
+        <a href="../index.html">Back to Workshop &rarr;</a>
+      </div>
+    </aside>
+
+    <!-- Map Content -->
+    <div class="task-content">
+      <div id="map"></div>
+
+      <!-- Map Controls Overlay -->
+      <div class="map-overlay top-left">
+        <h3>Capstone Map</h3>
+        <div class="stats">
+          <div id="mapStatus" style="color: var(--color-text-muted);">Waiting for data...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared JavaScript -->
+  <script src="../assets/workshop.js"></script>
+
+  <!-- Map Initialization -->
+  <script>
+    // Register PMTiles protocol
+    const protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol('pmtiles', protocol.tile);
+
+    // Initialize map
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'carto-dark': {
+            type: 'raster',
+            tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+            tileSize: 256,
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+          }
+        },
+        layers: [
+          { id: 'background', type: 'raster', source: 'carto-dark' }
+        ]
+      },
+      center: [8.54, 47.37],
+      zoom: 14,
+      hash: 'map'
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+
+    // Update status display
+    function setStatus(message, success = false) {
+      const status = document.getElementById('mapStatus');
+      status.textContent = message;
+      status.style.color = success ? 'var(--color-success)' : 'var(--color-text-muted)';
+    }
+
+    // Load GeoJSON
+    window.loadGeoJSON = function() {
+      const input = document.getElementById('geojsonInput').value;
+
+      try {
+        const geojson = JSON.parse(input);
+        setStatus('Parsing GeoJSON...');
+
+        // Remove existing source/layers if present
+        if (map.getLayer('geojson-fill')) map.removeLayer('geojson-fill');
+        if (map.getLayer('geojson-line')) map.removeLayer('geojson-line');
+        if (map.getLayer('geojson-point')) map.removeLayer('geojson-point');
+        if (map.getSource('user-geojson')) map.removeSource('user-geojson');
+
+        // Add source
+        map.addSource('user-geojson', {
+          type: 'geojson',
+          data: geojson
+        });
+
+        setStatus('Building spatial index...');
+
+        // Add layers for different geometry types
+        map.addLayer({
+          id: 'geojson-fill',
+          type: 'fill',
+          source: 'user-geojson',
+          filter: ['==', ['geometry-type'], 'Polygon'],
+          paint: {
+            'fill-color': '#d97706',
+            'fill-opacity': 0.5
+          }
+        });
+
+        map.addLayer({
+          id: 'geojson-line',
+          type: 'line',
+          source: 'user-geojson',
+          filter: ['==', ['geometry-type'], 'LineString'],
+          paint: {
+            'line-color': '#0ea5e9',
+            'line-width': 3
+          }
+        });
+
+        map.addLayer({
+          id: 'geojson-point',
+          type: 'circle',
+          source: 'user-geojson',
+          filter: ['==', ['geometry-type'], 'Point'],
+          paint: {
+            'circle-color': '#22c55e',
+            'circle-radius': 8,
+            'circle-stroke-color': '#fff',
+            'circle-stroke-width': 2
+          }
+        });
+
+        setStatus('Data loaded successfully!', true);
+
+        // Fit bounds to data
+        const bounds = new maplibregl.LngLatBounds();
+        geojson.features.forEach(f => {
+          if (f.geometry.type === 'Point') {
+            bounds.extend(f.geometry.coordinates);
+          } else if (f.geometry.type === 'Polygon') {
+            f.geometry.coordinates[0].forEach(coord => bounds.extend(coord));
+          } else if (f.geometry.type === 'LineString') {
+            f.geometry.coordinates.forEach(coord => bounds.extend(coord));
+          }
+        });
+
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, { padding: 50 });
+        }
+
+        // Add click handler for feature info
+        map.on('click', 'geojson-fill', (e) => {
+          if (e.features.length > 0) {
+            const props = e.features[0].properties;
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(`<strong>${props.name || 'Feature'}</strong><br>${props.type || ''}`)
+              .addTo(map);
+          }
+        });
+
+        map.on('click', 'geojson-point', (e) => {
+          if (e.features.length > 0) {
+            const props = e.features[0].properties;
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(`<strong>${props.name || 'Point'}</strong><br>${props.type || ''}`)
+              .addTo(map);
+          }
+        });
+
+      } catch (e) {
+        setStatus('Error: ' + e.message);
+        console.error('GeoJSON parse error:', e);
+      }
+    };
+
+    // PMTiles file upload
+    const pmtilesUpload = document.getElementById('pmtilesUpload');
+    const pmtilesFile = document.getElementById('pmtilesFile');
+
+    pmtilesUpload.addEventListener('click', () => pmtilesFile.click());
+    pmtilesUpload.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      pmtilesUpload.classList.add('dragging');
+    });
+    pmtilesUpload.addEventListener('dragleave', () => {
+      pmtilesUpload.classList.remove('dragging');
+    });
+    pmtilesUpload.addEventListener('drop', (e) => {
+      e.preventDefault();
+      pmtilesUpload.classList.remove('dragging');
+      if (e.dataTransfer.files.length > 0) {
+        loadPMTiles(e.dataTransfer.files[0]);
+      }
+    });
+    pmtilesFile.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        loadPMTiles(e.target.files[0]);
+      }
+    });
+
+    async function loadPMTiles(file) {
+      setStatus('Loading PMTiles...');
+
+      // Show loaded file info
+      document.getElementById('pmtilesUpload').style.display = 'none';
+      document.getElementById('pmtilesLoaded').style.display = 'flex';
+      document.getElementById('pmtilesName').textContent = file.name;
+      document.getElementById('pmtilesSize').textContent =
+        (file.size / 1024 / 1024).toFixed(2) + ' MB';
+
+      try {
+        const url = URL.createObjectURL(file);
+        const p = new pmtiles.PMTiles(url);
+        const header = await p.getHeader();
+        const metadata = await p.getMetadata();
+
+        setStatus('Parsing tile metadata...');
+
+        console.log('PMTiles header:', header);
+        console.log('PMTiles metadata:', metadata);
+
+        // Remove existing pmtiles source if present
+        if (map.getSource('user-pmtiles')) {
+          const style = map.getStyle();
+          style.layers.forEach(layer => {
+            if (layer.source === 'user-pmtiles') {
+              map.removeLayer(layer.id);
+            }
+          });
+          map.removeSource('user-pmtiles');
+        }
+
+        // Add PMTiles source
+        map.addSource('user-pmtiles', {
+          type: 'vector',
+          url: `pmtiles://${url}`
+        });
+
+        // Add layers for each vector layer in the tileset
+        const vectorLayers = metadata.vector_layers || [];
+        vectorLayers.forEach((layer, i) => {
+          const layerId = `pmtiles-${layer.id}`;
+
+          if (layer.id.includes('building') || layer.id.includes('land')) {
+            map.addLayer({
+              id: layerId,
+              type: 'fill',
+              source: 'user-pmtiles',
+              'source-layer': layer.id,
+              paint: {
+                'fill-color': `hsl(${(i * 60) % 360}, 70%, 50%)`,
+                'fill-opacity': 0.6
+              }
+            });
+          } else if (layer.id.includes('road') || layer.id.includes('line') || layer.id.includes('boundary')) {
+            map.addLayer({
+              id: layerId,
+              type: 'line',
+              source: 'user-pmtiles',
+              'source-layer': layer.id,
+              paint: {
+                'line-color': `hsl(${(i * 60) % 360}, 70%, 60%)`,
+                'line-width': 2
+              }
+            });
+          } else {
+            map.addLayer({
+              id: layerId,
+              type: 'fill',
+              source: 'user-pmtiles',
+              'source-layer': layer.id,
+              paint: {
+                'fill-color': `hsl(${(i * 60) % 360}, 60%, 50%)`,
+                'fill-opacity': 0.5
+              }
+            });
+          }
+        });
+
+        setStatus(`Loaded ${vectorLayers.length} layers!`, true);
+
+        // Fit to bounds if available
+        if (header.minLon && header.minLat && header.maxLon && header.maxLat) {
+          map.fitBounds([
+            [header.minLon, header.minLat],
+            [header.maxLon, header.maxLat]
+          ], { padding: 20 });
+        }
+
+      } catch (e) {
+        setStatus('Error loading PMTiles: ' + e.message);
+        console.error('PMTiles error:', e);
+      }
+    }
+
+    // Console logging
+    console.log('%c=== Capstone: End-to-End Pipeline ===', 'color: #d97706; font-size: 16px; font-weight: bold');
+    console.log('%cExplore the complete vector tile pipeline!', 'color: #22c55e');
+    console.log('');
+    console.log('This exercise brings together everything:');
+    console.log('  - Data sources (GeoJSON, PMTiles)');
+    console.log('  - Tile formats and protocols');
+    console.log('  - MapLibre styling and rendering');
+    console.log('');
+    console.log('Try loading your own data!');
+  </script>
+</body>
+</html>

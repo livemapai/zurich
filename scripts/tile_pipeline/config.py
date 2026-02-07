@@ -47,6 +47,12 @@ class SourceConfig:
     trees_path: Path = field(
         default_factory=lambda: Path("public/data/zurich-trees.geojson")
     )
+    streets_path: Path = field(
+        default_factory=lambda: Path("data/raw/streets-wfs.geojson")
+    )
+    water_path: Path = field(
+        default_factory=lambda: Path("data/raw/water-bodies.geojson")
+    )
 
 
 @dataclass
